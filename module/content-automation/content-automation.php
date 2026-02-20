@@ -873,12 +873,13 @@ class Kiosk_Content_Automation
     }
 
     /**
-     * Check if post already exists
+     * Check if post already exists (checks all post statuses)
      */
     private function post_exists_by_source_id($source_id)
     {
         $args = array(
             'post_type' => 'post',
+            'post_status' => 'any', // Check all statuses (draft, publish, pending, etc.)
             'meta_key' => 'kiosk_source_post_id',
             'meta_value' => $source_id,
             'posts_per_page' => 1,
