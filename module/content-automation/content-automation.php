@@ -48,6 +48,11 @@ class Kiosk_Content_Automation
         add_filter('manage_posts_columns', array($this, 'add_chatgpt_status_column'));
         add_action('manage_posts_custom_column', array($this, 'display_chatgpt_status_column'), 10, 2);
         add_action('admin_head', array($this, 'add_chatgpt_status_column_styles'));
+
+        // Row actions for individual post update
+        add_filter('post_row_actions', array($this, 'add_update_post_action'), 10, 2);
+        add_action('admin_footer', array($this, 'add_update_post_script'));
+        add_action('wp_ajax_kiosk_update_individual_post', array($this, 'update_individual_post_ajax'));
     }
 
     /**
@@ -267,7 +272,8 @@ class Kiosk_Content_Automation
     }
 
     /**
-     * Clean HTML and convert to plain text, split by newlines if needed
+     * Clean HTML and convert to plain text, preserving links
+     * Extracts URLs from anchor tags before stripping HTML
      */
     private function clean_and_parse_field($value)
     {
@@ -275,8 +281,11 @@ class Kiosk_Content_Automation
             return '';
         }
 
-        // Strip HTML tags
-        $text = wp_strip_all_tags($value);
+        // First, extract and preserve links in format: "Link Text (URL)"
+        $text = $this->extract_and_preserve_links($value);
+
+        // Strip remaining HTML tags
+        $text = wp_strip_all_tags($text);
 
         // Decode HTML entities
         $text = html_entity_decode($text, ENT_QUOTES | ENT_HTML5, 'UTF-8');
@@ -296,6 +305,41 @@ class Kiosk_Content_Automation
 
         // Otherwise return as single string
         return trim($text);
+    }
+
+    /**
+     * Extract links from HTML and preserve them with their URLs
+     * Converts <a href="url">text</a> to "text (url)"
+     */
+    private function extract_and_preserve_links($html)
+    {
+        if (empty($html)) {
+            return '';
+        }
+
+        // Match all anchor tags and replace them with "text (url)" format
+        $pattern = '/<a[^>]*href=[\'"]([^\'"]*)[\'"][^>]*>(.*?)<\/a>/is';
+        $html = preg_replace_callback(
+            $pattern,
+            function ($matches) {
+                $url = trim($matches[1]);
+                $text = wp_strip_all_tags($matches[2]);
+                $text = html_entity_decode($text, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+                $text = trim($text);
+
+                // If link text is generic (like "click here"), just return the URL
+                $generic_texts = array('click here', 'here', 'link', 'read more', 'more');
+                if (in_array(strtolower($text), $generic_texts)) {
+                    return $url;
+                }
+
+                // Return in format: "text (url)"
+                return !empty($text) ? $text . ' (' . $url . ')' : $url;
+            },
+            $html
+        );
+
+        return $html;
     }
 
     /**
@@ -890,8 +934,8 @@ class Kiosk_Content_Automation
             $prepared_json = $this->prepare_post_json($post_data);
 
             // Use ACF post_title if available, otherwise use default title
-            $title_to_use = isset($post_data['acf']['post_title']) && !empty($post_data['acf']['post_title']) 
-                ? $post_data['acf']['post_title'] 
+            $title_to_use = isset($post_data['acf']['post_title']) && !empty($post_data['acf']['post_title'])
+                ? $post_data['acf']['post_title']
                 : $post_data['title']['rendered'];
 
             // Get featured image
@@ -1057,10 +1101,10 @@ class Kiosk_Content_Automation
                 // Store ChatGPT result
                 update_post_meta($post_id, 'kiosk_chatgpt_json', $chatgpt_result);
                 update_post_meta($post_id, 'kiosk_processing_status', 'completed');
-                
+
                 // Publish the post now that ChatGPT processing is complete
                 wp_publish_post($post_id);
-                
+
                 $processed_count++;
             } else {
                 update_post_meta($post_id, 'kiosk_processing_status', 'failed');
@@ -1231,7 +1275,194 @@ class Kiosk_Content_Automation
             .chatgpt-status-completed { color: #46b450; font-weight: 500; }
             .chatgpt-status-failed { color: #dc3232; font-weight: 500; }
             .column-chatgpt_status { width: 150px; }
+            .kiosk-update-post { color: #2271b1; }
+            .kiosk-update-post:hover { color: #135e96; }
+            .kiosk-updating { opacity: 0.5; pointer-events: none; }
         </style>';
+    }
+
+    /**
+     * Add update action to post row actions
+     */
+    public function add_update_post_action($actions, $post)
+    {
+        // Only show for posts that have a source post ID
+        $source_post_id = get_post_meta($post->ID, 'kiosk_source_post_id', true);
+        
+        if (!empty($source_post_id)) {
+            $actions['kiosk_update'] = sprintf(
+                '<a href="#" class="kiosk-update-post" data-post-id="%d" data-source-id="%d">🔄 Update from Source</a>',
+                $post->ID,
+                $source_post_id
+            );
+        }
+        
+        return $actions;
+    }
+
+    /**
+     * Add JavaScript for update post action
+     */
+    public function add_update_post_script()
+    {
+        $screen = get_current_screen();
+        if ($screen->id !== 'edit-post') {
+            return;
+        }
+        
+        ?>
+        <script type="text/javascript">
+        jQuery(document).ready(function($) {
+            $('.kiosk-update-post').on('click', function(e) {
+                e.preventDefault();
+                
+                var $link = $(this);
+                var postId = $link.data('post-id');
+                var sourceId = $link.data('source-id');
+                var $row = $link.closest('tr');
+                
+                if ($link.hasClass('kiosk-updating')) {
+                    return;
+                }
+                
+                if (!confirm('Update this post from source ID ' + sourceId + '? This will fetch fresh data from the API and re-process with ChatGPT.')) {
+                    return;
+                }
+                
+                $link.addClass('kiosk-updating');
+                $link.text('🔄 Updating...');
+                
+                $.ajax({
+                    url: ajaxurl,
+                    type: 'POST',
+                    data: {
+                        action: 'kiosk_update_individual_post',
+                        post_id: postId,
+                        source_id: sourceId,
+                        nonce: '<?php echo wp_create_nonce('kiosk_update_post'); ?>'
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            $link.text('✅ Updated!');
+                            $link.css('color', '#46b450');
+                            
+                            // Update status column if exists
+                            var $statusCell = $row.find('.column-chatgpt_status');
+                            if ($statusCell.length) {
+                                $statusCell.html('<span class="chatgpt-status-pending">⏳ Pending</span>');
+                            }
+                            
+                            setTimeout(function() {
+                                location.reload();
+                            }, 1500);
+                        } else {
+                            alert('Error: ' + (response.data.message || 'Failed to update post'));
+                            $link.removeClass('kiosk-updating');
+                            $link.text('🔄 Update from Source');
+                        }
+                    },
+                    error: function() {
+                        alert('AJAX error occurred');
+                        $link.removeClass('kiosk-updating');
+                        $link.text('🔄 Update from Source');
+                    }
+                });
+            });
+        });
+        </script>
+        <?php
+    }
+
+    /**
+     * Update individual post from source (AJAX)
+     */
+    public function update_individual_post_ajax()
+    {
+        check_ajax_referer('kiosk_update_post', 'nonce');
+        
+        if (!current_user_can('edit_posts')) {
+            wp_send_json_error(array('message' => 'Permission denied'));
+        }
+        
+        $post_id = isset($_POST['post_id']) ? intval($_POST['post_id']) : 0;
+        $source_id = isset($_POST['source_id']) ? intval($_POST['source_id']) : 0;
+        
+        if (!$post_id || !$source_id) {
+            wp_send_json_error(array('message' => 'Invalid post ID or source ID'));
+        }
+        
+        // Fetch fresh data from API
+        $url = add_query_arg(array(
+            '_embed' => 1,
+            'acf_format' => 'standard'
+        ), $this->get_api_base_url() . '/posts/' . $source_id);
+        
+        $response = wp_remote_get($url, array(
+            'timeout' => 30,
+            'sslverify' => false
+        ));
+        
+        if (is_wp_error($response)) {
+            wp_send_json_error(array('message' => 'API Error: ' . $response->get_error_message()));
+        }
+        
+        $response_code = wp_remote_retrieve_response_code($response);
+        if ($response_code !== 200) {
+            wp_send_json_error(array('message' => 'API returned error code: ' . $response_code));
+        }
+        
+        $post_data = json_decode(wp_remote_retrieve_body($response), true);
+        
+        if (!$post_data || !isset($post_data['id'])) {
+            wp_send_json_error(array('message' => 'Failed to parse API response'));
+        }
+        
+        // Prepare new JSON
+        $prepared_json = $this->prepare_post_json($post_data);
+        
+        // Use ACF post_title if available
+        $title_to_use = isset($post_data['acf']['post_title']) && !empty($post_data['acf']['post_title']) 
+            ? $post_data['acf']['post_title'] 
+            : $post_data['title']['rendered'];
+        $clean_title = $this->clean_title($title_to_use);
+        
+        // Update post
+        $update_result = wp_update_post(array(
+            'ID' => $post_id,
+            'post_title' => sanitize_text_field($clean_title),
+            'post_content' => wp_kses_post($post_data['content']['rendered']),
+            'post_excerpt' => isset($post_data['excerpt']['rendered']) ? wp_kses_post($post_data['excerpt']['rendered']) : '',
+            'post_status' => 'draft', // Back to draft for re-processing
+        ));
+        
+        if (is_wp_error($update_result)) {
+            wp_send_json_error(array('message' => 'Failed to update post: ' . $update_result->get_error_message()));
+        }
+        
+        // Update featured image if available
+        if (isset($post_data['_embedded']['wp:featuredmedia'][0]['source_url'])) {
+            $image_url = $post_data['_embedded']['wp:featuredmedia'][0]['source_url'];
+            $featured_image_id = $this->download_and_attach_image($image_url, $title_to_use);
+            if ($featured_image_id > 0) {
+                set_post_thumbnail($post_id, $featured_image_id);
+            }
+        }
+        
+        // Update meta fields
+        update_post_meta($post_id, 'kiosk_raw_post_data', $prepared_json);
+        update_post_meta($post_id, 'kiosk_processing_status', 'pending');
+        
+        // Clear old ChatGPT data
+        delete_post_meta($post_id, 'kiosk_chatgpt_json');
+        
+        // Schedule ChatGPT processing
+        $this->schedule_chatgpt_processing();
+        
+        wp_send_json_success(array(
+            'message' => 'Post updated successfully and queued for ChatGPT processing',
+            'post_id' => $post_id,
+            'source_id' => $source_id
+        ));
     }
 
     /**
@@ -1307,10 +1538,10 @@ class Kiosk_Content_Automation
 
         if ($posts && is_array($posts) && count($posts) > 0) {
             // Use ACF post_title if available
-            $sample_title = isset($posts[0]['acf']['post_title']) && !empty($posts[0]['acf']['post_title']) 
-                ? $posts[0]['acf']['post_title'] 
+            $sample_title = isset($posts[0]['acf']['post_title']) && !empty($posts[0]['acf']['post_title'])
+                ? $posts[0]['acf']['post_title']
                 : $posts[0]['title']['rendered'];
-            
+
             wp_send_json_success(array(
                 'message' => 'API connection successful!',
                 'sample_post' => $sample_title,
@@ -1408,8 +1639,8 @@ class Kiosk_Content_Automation
         }
 
         // Use ACF post_title if available
-        $display_title = isset($post_data['acf']['post_title']) && !empty($post_data['acf']['post_title']) 
-            ? $post_data['acf']['post_title'] 
+        $display_title = isset($post_data['acf']['post_title']) && !empty($post_data['acf']['post_title'])
+            ? $post_data['acf']['post_title']
             : $post_data['title']['rendered'];
 
         wp_send_json_success(array(
