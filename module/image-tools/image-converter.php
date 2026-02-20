@@ -36,7 +36,7 @@ function image_converter_enqueue_scripts()
 }
 add_action('wp_enqueue_scripts', 'image_converter_enqueue_scripts');
 
-// AJAX Handler: Convert Image
+// AJAX Handler: Convert Images
 function ajax_convert_image()
 {
     check_ajax_referer('image_converter_nonce', 'nonce');
