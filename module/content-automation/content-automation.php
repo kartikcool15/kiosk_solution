@@ -929,16 +929,8 @@ class Kiosk_Content_Automation
                 // Save source post ID
                 update_post_meta($new_post_id, 'kiosk_source_post_id', $source_post_id);
 
-                // Store ACF fields directly from API response
-                if (isset($post_data['acf']) && is_array($post_data['acf']) && !empty($post_data['acf'])) {
-                    foreach ($post_data['acf'] as $field_key => $field_value) {
-                        if (!empty($field_value)) {
-                            update_field($field_key, $field_value, $new_post_id);
-                        }
-                    }
-                }
-
-                // Store prepared JSON for later ChatGPT processing
+                // Store complete cleaned ACF JSON for later ChatGPT processing
+                // The prepared_json already contains cleaned ACF data in 'acf_fields' key
                 update_post_meta($new_post_id, 'kiosk_raw_post_data', $prepared_json);
                 update_post_meta($new_post_id, 'kiosk_processing_status', 'pending');
 
