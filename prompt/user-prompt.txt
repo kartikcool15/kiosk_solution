@@ -1,0 +1,67 @@
+Here is job data JSON containing ACF custom fields:
+
+[PASTE CLEANED JSON HERE]
+
+The above JSON contains:
+- Basic post metadata (id, title, post_date, source_link)
+- acf_fields object with all custom field data (HTML has been stripped but content structure preserved)
+
+Common ACF field names you'll find:
+- short_details: Brief description/excerpt
+- important_dates: Date-related information
+- application_fee: Fee details
+- total_post: Total vacancy count
+- vacancy_details: Post-wise vacancy breakdown
+- age_limit_for / age_limits_details: Age eligibility information
+- important_links: Links and possibly FAQs
+- And other relevant fields depending on the source
+
+Extract and normalize the following structure from ALL available ACF fields. Parse the content intelligently to find the required information:
+
+{
+  post_title,
+  post_content_summary: "Create a concise, SEO-optimized summary of maximum 100 words. Include relevant keywords such as job title, organization name, vacancy count, key dates, and eligibility. Make it engaging and informative for search engines and readers.",
+  organization,
+  dates {
+    start_date,
+    last_date,
+    exam_date,
+    admit_card_date,
+    result_date,
+    counselling_date,
+    interview_date,
+    other_important_dates [{event, date}]
+  },
+  age_eligibility,
+  age_limit_as_on,
+  total_vacancy,
+  post_vacancy [{post_name, vacancy}],
+  eligibility_post_wise [{post_name, eligibility}],
+  fees: "Extract fee details as array of objects with 'title' and 'value' keys. Format: [{title: 'General', value: '500'}, {title: 'OBC', value: '250'}, {title: 'SC/ST', value: 'Exempted'}]. The titles shown are EXAMPLES - adapt them based on the actual fee categories found in the data (e.g., 'General Category', 'EWS', 'Ex-Servicemen', 'Refund for General', etc.). Use only numbers without currency symbols in value field.",
+  how_to_apply,
+  faqs: "Extract existing FAQs and REWRITE them in SEO-friendly language with natural, conversational questions. Also CREATE additional relevant FAQs (minimum 5-10 total) based on the job data covering topics like eligibility, application process, important dates, fee payment, selection process, document requirements, etc. Format: [{question, answer}]",
+  links {
+    apply_online,
+    notification_pdf,
+    admit_card,
+    result,
+    official_website,
+    additional_links [{title, url}]
+  }
+}
+
+CRITICAL: For links object, you MUST extract and use these exact keys:
+- apply_online: URL for online application submission (official government portal only)
+- notification_pdf: URL for job notification PDF download (direct .pdf link preferred)
+- admit_card: URL for admit card download (if available)
+- result: URL for result checking (if available)
+- official_website: Main official website URL (government/organization domain)
+- additional_links: Array of any other relevant links with descriptive titles
+
+IMPORTANT LINK EXTRACTION RULES:
+1. NEVER include links containing "sarkariresult" in the URL
+2. ONLY extract official government/organization links (e.g., .gov.in, .nic.in, indianrailways.gov.in, etc.)
+3. Look for genuine notification PDFs hosted on official domains
+4. If an official link is not found in the data, use empty string ""
+5. Skip source website links - extract only the actual official links mentioned in the content
+6. For additional_links, only include genuinely useful official resources, not promotional or source site links

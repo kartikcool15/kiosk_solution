@@ -1,0 +1,103 @@
+/* Image Tools Styles */
+
+.quality-display {
+    text-align: center;
+    font-size: 18px;
+    font-weight: 700;
+    color: #6347ea;
+}
+
+.form-hint {
+    color: #64748b;
+    font-size: 12px;
+}
+
+/* Result Display */
+.tool-result {
+    margin-top: 24px;
+    padding: 20px;
+    background: #f0fdf4;
+    border: 1px solid #86efac;
+    border-radius: 8px;
+}
+
+.result-info {
+    display: grid;
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.info-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px;
+    background: white;
+    border-radius: 6px;
+}
+
+.info-item .label {
+    font-weight: 600;
+    color: #475569;
+}
+
+.info-item .value {
+    font-weight: 700;
+    color: #1e293b;
+}
+
+.info-item .value.success {
+    color: #059669;
+}
+
+/* Size change colors for image converter */
+.value.decrease {
+    color: #059669 !important;
+}
+
+.value.increase {
+    color: #dc2626 !important;
+}
+
+/* Error Container */
+.error-container {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 1000;
+    max-width: 400px;
+}
+
+.error-message {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px 20px;
+    background: #fee2e2;
+    border: 1px solid #fca5a5;
+    border-radius: 8px;
+    color: #991b1b;
+    font-weight: 500;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.error-icon {
+    font-size: 20px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .image-tools-container {
+        padding: 15px;
+    }
+
+    .btn-action {
+        width: 100%;
+    }
+
+    .error-container {
+        left: 20px;
+        right: 20px;
+        max-width: none;
+    }
+}
