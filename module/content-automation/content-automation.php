@@ -662,8 +662,12 @@ class Kiosk_Content_Automation
             'source_link' => isset($post_data['link']) ? $post_data['link'] : '',
         );
 
-        // Use title from post data
-        $raw_title = isset($post_data['title']['rendered']) ? wp_strip_all_tags($post_data['title']['rendered']) : '';
+        // Use ACF post_title if available, otherwise use default title
+        if (isset($post_data['acf']['post_title']) && !empty($post_data['acf']['post_title'])) {
+            $raw_title = wp_strip_all_tags($post_data['acf']['post_title']);
+        } else {
+            $raw_title = isset($post_data['title']['rendered']) ? wp_strip_all_tags($post_data['title']['rendered']) : '';
+        }
         $clean_data['title'] = $this->clean_title($raw_title);
 
         // Check if ACF data exists - send ALL ACF fields to ChatGPT
@@ -880,15 +884,20 @@ class Kiosk_Content_Automation
             // Prepare JSON for later ChatGPT processing (DO NOT process now)
             $prepared_json = $this->prepare_post_json($post_data);
 
+            // Use ACF post_title if available, otherwise use default title
+            $title_to_use = isset($post_data['acf']['post_title']) && !empty($post_data['acf']['post_title']) 
+                ? $post_data['acf']['post_title'] 
+                : $post_data['title']['rendered'];
+
             // Get featured image
             $featured_image_id = 0;
             if (isset($post_data['_embedded']['wp:featuredmedia'][0]['source_url'])) {
                 $image_url = $post_data['_embedded']['wp:featuredmedia'][0]['source_url'];
-                $featured_image_id = $this->download_and_attach_image($image_url, $post_data['title']['rendered']);
+                $featured_image_id = $this->download_and_attach_image($image_url, $title_to_use);
             }
 
             // Clean and prepare title
-            $clean_title = $this->clean_title($post_data['title']['rendered']);
+            $clean_title = $this->clean_title($title_to_use);
 
             // Prepare post date - use source post date if available
             $post_date = '';
@@ -1217,9 +1226,14 @@ class Kiosk_Content_Automation
         $posts = $this->fetch_posts_from_api(1, 1);
 
         if ($posts && is_array($posts) && count($posts) > 0) {
+            // Use ACF post_title if available
+            $sample_title = isset($posts[0]['acf']['post_title']) && !empty($posts[0]['acf']['post_title']) 
+                ? $posts[0]['acf']['post_title'] 
+                : $posts[0]['title']['rendered'];
+            
             wp_send_json_success(array(
                 'message' => 'API connection successful!',
-                'sample_post' => $posts[0]['title']['rendered'],
+                'sample_post' => $sample_title,
                 'api_url' => $api_url
             ));
         } else {
@@ -1313,10 +1327,15 @@ class Kiosk_Content_Automation
             $chatgpt_full_json = $this->process_post_data_with_chatgpt($prepared_json);
         }
 
+        // Use ACF post_title if available
+        $display_title = isset($post_data['acf']['post_title']) && !empty($post_data['acf']['post_title']) 
+            ? $post_data['acf']['post_title'] 
+            : $post_data['title']['rendered'];
+
         wp_send_json_success(array(
             'post' => array(
                 'id' => $post_data['id'],
-                'title' => $post_data['title']['rendered'],
+                'title' => $display_title,
                 'date' => $post_data['date'],
                 'link' => $post_data['link']
             ),
