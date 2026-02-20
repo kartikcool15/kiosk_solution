@@ -43,6 +43,11 @@ class Kiosk_Content_Automation
         add_action('wp_ajax_kiosk_test_api_connection', array($this, 'test_api_connection'));
         add_action('wp_ajax_kiosk_fetch_single_post', array($this, 'fetch_single_post_ajax'));
         add_action('wp_ajax_kiosk_process_chatgpt_now', array($this, 'manual_process_chatgpt'));
+
+        // Admin column for ChatGPT status
+        add_filter('manage_posts_columns', array($this, 'add_chatgpt_status_column'));
+        add_action('manage_posts_custom_column', array($this, 'display_chatgpt_status_column'), 10, 2);
+        add_action('admin_head', array($this, 'add_chatgpt_status_column_styles'));
     }
 
     /**
@@ -909,12 +914,12 @@ class Kiosk_Content_Automation
                 $post_date_gmt = $post_data['date_gmt'];
             }
 
-            // Create the post immediately
+            // Create the post as draft (will publish after ChatGPT processing)
             $post_data_array = array(
                 'post_title' => sanitize_text_field($clean_title),
                 'post_content' => wp_kses_post($post_data['content']['rendered']),
                 'post_excerpt' => isset($post_data['excerpt']['rendered']) ? wp_kses_post($post_data['excerpt']['rendered']) : '',
-                'post_status' => 'publish',
+                'post_status' => 'draft', // Keep as draft until ChatGPT processes it
                 'post_type' => 'post',
                 'post_category' => $this->map_categories($post_data['categories']),
             );
@@ -995,10 +1000,10 @@ class Kiosk_Content_Automation
             return;
         }
 
-        // Get posts that need ChatGPT processing
+        // Get posts that need ChatGPT processing (includes drafts)
         $args = array(
             'post_type' => 'post',
-            'post_status' => 'publish',
+            'post_status' => array('draft', 'publish'), // Include both draft and published posts
             'meta_query' => array(
                 array(
                     'key' => 'kiosk_processing_status',
@@ -1052,6 +1057,10 @@ class Kiosk_Content_Automation
                 // Store ChatGPT result
                 update_post_meta($post_id, 'kiosk_chatgpt_json', $chatgpt_result);
                 update_post_meta($post_id, 'kiosk_processing_status', 'completed');
+                
+                // Publish the post now that ChatGPT processing is complete
+                wp_publish_post($post_id);
+                
                 $processed_count++;
             } else {
                 update_post_meta($post_id, 'kiosk_processing_status', 'failed');
@@ -1071,6 +1080,7 @@ class Kiosk_Content_Automation
         // Reschedule if there are more posts to process
         $remaining = new WP_Query(array(
             'post_type' => 'post',
+            'post_status' => array('draft', 'publish'), // Include both statuses
             'meta_query' => array(
                 array(
                     'key' => 'kiosk_processing_status',
@@ -1156,6 +1166,75 @@ class Kiosk_Content_Automation
     }
 
     /**
+     * Add ChatGPT status column to posts list
+     */
+    public function add_chatgpt_status_column($columns)
+    {
+        // Insert after the title column
+        $new_columns = array();
+        foreach ($columns as $key => $value) {
+            $new_columns[$key] = $value;
+            if ($key === 'title') {
+                $new_columns['chatgpt_status'] = 'ChatGPT Status';
+            }
+        }
+        return $new_columns;
+    }
+
+    /**
+     * Display ChatGPT status column content
+     */
+    public function display_chatgpt_status_column($column, $post_id)
+    {
+        if ($column === 'chatgpt_status') {
+            $status = get_post_meta($post_id, 'kiosk_processing_status', true);
+            $source_id = get_post_meta($post_id, 'kiosk_source_post_id', true);
+
+            // Only show status for imported posts
+            if (empty($source_id)) {
+                echo '<span style="color: #999;">—</span>';
+                return;
+            }
+
+            if (empty($status)) {
+                echo '<span style="color: #999;">Not Queued</span>';
+                return;
+            }
+
+            switch ($status) {
+                case 'pending':
+                    echo '<span class="chatgpt-status-pending">⏳ Pending</span>';
+                    break;
+                case 'processing':
+                    echo '<span class="chatgpt-status-processing">⚙️ Processing</span>';
+                    break;
+                case 'completed':
+                    echo '<span class="chatgpt-status-completed">✅ Completed</span>';
+                    break;
+                case 'failed':
+                    echo '<span class="chatgpt-status-failed">❌ Failed</span>';
+                    break;
+                default:
+                    echo '<span style="color: #999;">' . esc_html($status) . '</span>';
+            }
+        }
+    }
+
+    /**
+     * Add styles for ChatGPT status column
+     */
+    public function add_chatgpt_status_column_styles()
+    {
+        echo '<style>
+            .chatgpt-status-pending { color: #f0ad4e; font-weight: 500; }
+            .chatgpt-status-processing { color: #0073aa; font-weight: 500; }
+            .chatgpt-status-completed { color: #46b450; font-weight: 500; }
+            .chatgpt-status-failed { color: #dc3232; font-weight: 500; }
+            .column-chatgpt_status { width: 150px; }
+        </style>';
+    }
+
+    /**
      * Manual sync handler (AJAX)
      */
     public function manual_sync()
@@ -1186,6 +1265,7 @@ class Kiosk_Content_Automation
         // Get count of pending posts before processing
         $pending_query = new WP_Query(array(
             'post_type' => 'post',
+            'post_status' => array('draft', 'publish'), // Include both statuses
             'meta_query' => array(
                 array(
                     'key' => 'kiosk_processing_status',
