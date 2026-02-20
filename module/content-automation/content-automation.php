@@ -35,10 +35,14 @@ class Kiosk_Content_Automation
         // Hook into cron
         add_action('kiosk_fetch_content_cron', array($this, 'fetch_and_publish_content'));
 
+        // Background processing for ChatGPT
+        add_action('kiosk_process_chatgpt_queue', array($this, 'process_chatgpt_queue'));
+
         // Admin AJAX handlers
         add_action('wp_ajax_kiosk_manual_sync', array($this, 'manual_sync'));
         add_action('wp_ajax_kiosk_test_api_connection', array($this, 'test_api_connection'));
         add_action('wp_ajax_kiosk_fetch_single_post', array($this, 'fetch_single_post_ajax'));
+        add_action('wp_ajax_kiosk_process_chatgpt_now', array($this, 'manual_process_chatgpt'));
     }
 
     /**
@@ -58,6 +62,22 @@ class Kiosk_Content_Automation
         register_post_meta('post', 'kiosk_chatgpt_json', array(
             'type' => 'string',
             'description' => 'Full ChatGPT Processed JSON Data',
+            'single' => true,
+            'show_in_rest' => true,
+        ));
+
+        // Raw post data for ChatGPT processing queue
+        register_post_meta('post', 'kiosk_raw_post_data', array(
+            'type' => 'string',
+            'description' => 'Raw Post Data for ChatGPT Queue',
+            'single' => true,
+            'show_in_rest' => false,
+        ));
+
+        // Processing status
+        register_post_meta('post', 'kiosk_processing_status', array(
+            'type' => 'string',
+            'description' => 'ChatGPT Processing Status (pending, processing, completed, failed)',
             'single' => true,
             'show_in_rest' => true,
         ));
@@ -109,12 +129,12 @@ class Kiosk_Content_Automation
             '_embed' => 1,
             'acf_format' => 'standard' // Request ACF fields
         );
-        
+
         // Add category filter if provided
         if (!empty($categories) && is_array($categories)) {
             $args['categories'] = implode(',', $categories);
         }
-        
+
         $url = add_query_arg($args, $this->get_api_base_url() . '/posts');
 
         $response = wp_remote_get($url, array(
@@ -650,12 +670,12 @@ class Kiosk_Content_Automation
         if (isset($post_data['acf']) && is_array($post_data['acf']) && !empty($post_data['acf'])) {
             // Clean and prepare all ACF fields
             $clean_data['acf_fields'] = array();
-            
+
             foreach ($post_data['acf'] as $field_key => $field_value) {
                 if (empty($field_value)) {
                     continue; // Skip empty fields
                 }
-                
+
                 // Clean HTML content from ACF fields
                 if (is_string($field_value)) {
                     $clean_data['acf_fields'][$field_key] = $this->clean_and_parse_field($field_value);
@@ -818,6 +838,7 @@ class Kiosk_Content_Automation
 
     /**
      * Main function to fetch and publish content
+     * NEW ASYNC APPROACH: Create posts immediately with ACF data, queue ChatGPT processing for later
      */
     public function fetch_and_publish_content()
     {
@@ -829,13 +850,13 @@ class Kiosk_Content_Automation
         }
 
         $per_page = isset($settings['posts_per_sync']) ? intval($settings['posts_per_sync']) : 10;
-        
+
         // Get category filter if enabled
         $categories = array();
         if (isset($settings['filter_by_categories']) && $settings['filter_by_categories']) {
             $categories = isset($settings['source_categories']) ? $settings['source_categories'] : array();
         }
-        
+
         $posts = $this->fetch_posts_from_api(1, $per_page, $categories);
 
         if (!$posts || !is_array($posts)) {
@@ -845,6 +866,7 @@ class Kiosk_Content_Automation
 
         $imported_count = 0;
         $skipped_count = 0;
+        $queued_for_processing = 0;
 
         foreach ($posts as $post_data) {
             $source_post_id = $post_data['id'];
@@ -855,10 +877,8 @@ class Kiosk_Content_Automation
                 continue;
             }
 
-            // Extract custom fields from content
-            $custom_fields_data = $this->extract_custom_fields($post_data);
-            $custom_fields = $custom_fields_data['fields'];
-            $chatgpt_json = $custom_fields_data['chatgpt_json'];
+            // Prepare JSON for later ChatGPT processing (DO NOT process now)
+            $prepared_json = $this->prepare_post_json($post_data);
 
             // Get featured image
             $featured_image_id = 0;
@@ -868,7 +888,7 @@ class Kiosk_Content_Automation
             }
 
             // Clean and prepare title
-            $clean_title = $this->clean_title($post_data['post_title']);
+            $clean_title = $this->clean_title($post_data['title']['rendered']);
 
             // Prepare post date - use source post date if available
             $post_date = '';
@@ -880,7 +900,7 @@ class Kiosk_Content_Automation
                 $post_date_gmt = $post_data['date_gmt'];
             }
 
-            // Create the post
+            // Create the post immediately
             $post_data_array = array(
                 'post_title' => sanitize_text_field($clean_title),
                 'post_content' => wp_kses_post($post_data['content']['rendered']),
@@ -889,7 +909,7 @@ class Kiosk_Content_Automation
                 'post_type' => 'post',
                 'post_category' => $this->map_categories($post_data['categories']),
             );
-            
+
             // Add post date if available
             if (!empty($post_date)) {
                 $post_data_array['post_date'] = $post_date;
@@ -897,7 +917,7 @@ class Kiosk_Content_Automation
             if (!empty($post_date_gmt)) {
                 $post_data_array['post_date_gmt'] = $post_date_gmt;
             }
-            
+
             $new_post_id = wp_insert_post($post_data_array);
 
             if (!is_wp_error($new_post_id) && $new_post_id > 0) {
@@ -906,24 +926,202 @@ class Kiosk_Content_Automation
                     set_post_thumbnail($new_post_id, $featured_image_id);
                 }
 
-                // Save custom fields
+                // Save source post ID
                 update_post_meta($new_post_id, 'kiosk_source_post_id', $source_post_id);
 
-                // Save full ChatGPT JSON if available
-                if (!empty($chatgpt_json)) {
-                    update_post_meta($new_post_id, 'kiosk_chatgpt_json', $chatgpt_json);
+                // Store ACF fields directly from API response
+                if (isset($post_data['acf']) && is_array($post_data['acf']) && !empty($post_data['acf'])) {
+                    foreach ($post_data['acf'] as $field_key => $field_value) {
+                        if (!empty($field_value)) {
+                            update_field($field_key, $field_value, $new_post_id);
+                        }
+                    }
                 }
 
+                // Store prepared JSON for later ChatGPT processing
+                update_post_meta($new_post_id, 'kiosk_raw_post_data', $prepared_json);
+                update_post_meta($new_post_id, 'kiosk_processing_status', 'pending');
+
                 $imported_count++;
+                $queued_for_processing++;
             }
+        }
+
+        // Schedule background ChatGPT processing if posts were created
+        if ($queued_for_processing > 0) {
+            $this->schedule_chatgpt_processing();
         }
 
         // Log the results
         update_option('kiosk_last_sync', array(
             'time' => current_time('mysql'),
             'imported' => $imported_count,
-            'skipped' => $skipped_count
+            'skipped' => $skipped_count,
+            'queued_for_chatgpt' => $queued_for_processing
         ));
+    }
+
+    /**
+     * Schedule ChatGPT processing for pending posts
+     */
+    private function schedule_chatgpt_processing()
+    {
+        // Check if ChatGPT processing is enabled
+        $settings = get_option('kiosk_automation_settings', array());
+        $openai_enabled = isset($settings['openai_enabled']) && $settings['openai_enabled'];
+
+        if (!$openai_enabled) {
+            return; // Skip if ChatGPT is disabled
+        }
+
+        // Schedule the processing hook if not already scheduled
+        if (!wp_next_scheduled('kiosk_process_chatgpt_queue')) {
+            wp_schedule_single_event(time() + 60, 'kiosk_process_chatgpt_queue');
+        }
+    }
+
+    /**
+     * Process ChatGPT queue - runs in background
+     * Processes posts marked as 'pending' for ChatGPT
+     */
+    public function process_chatgpt_queue()
+    {
+        // Check if ChatGPT processing is enabled
+        $settings = get_option('kiosk_automation_settings', array());
+        $openai_enabled = isset($settings['openai_enabled']) && $settings['openai_enabled'];
+
+        if (!$openai_enabled) {
+            return;
+        }
+
+        // Get posts that need ChatGPT processing
+        $args = array(
+            'post_type' => 'post',
+            'post_status' => 'publish',
+            'meta_query' => array(
+                array(
+                    'key' => 'kiosk_processing_status',
+                    'value' => 'pending',
+                    'compare' => '='
+                )
+            ),
+            'posts_per_page' => 5, // Process 5 at a time to avoid timeout
+            'orderby' => 'date',
+            'order' => 'ASC'
+        );
+
+        $query = new WP_Query($args);
+
+        if (!$query->have_posts()) {
+            return; // No posts to process
+        }
+
+        $processed_count = 0;
+        $failed_count = 0;
+
+        while ($query->have_posts()) {
+            $query->the_post();
+            $post_id = get_the_ID();
+
+            // Mark as processing
+            update_post_meta($post_id, 'kiosk_processing_status', 'processing');
+
+            // Get stored raw post data
+            $raw_post_data = get_post_meta($post_id, 'kiosk_raw_post_data', true);
+
+            if (empty($raw_post_data)) {
+                update_post_meta($post_id, 'kiosk_processing_status', 'failed');
+                $failed_count++;
+                continue;
+            }
+
+            // Decode the JSON
+            $post_data_decoded = json_decode($raw_post_data, true);
+
+            if (!$post_data_decoded) {
+                update_post_meta($post_id, 'kiosk_processing_status', 'failed');
+                $failed_count++;
+                continue;
+            }
+
+            // Process with ChatGPT
+            $chatgpt_result = $this->process_post_data_with_chatgpt($raw_post_data);
+
+            if ($chatgpt_result !== false) {
+                // Store ChatGPT result
+                update_post_meta($post_id, 'kiosk_chatgpt_json', $chatgpt_result);
+                update_post_meta($post_id, 'kiosk_processing_status', 'completed');
+                $processed_count++;
+            } else {
+                update_post_meta($post_id, 'kiosk_processing_status', 'failed');
+                $failed_count++;
+            }
+        }
+
+        wp_reset_postdata();
+
+        // Log processing results
+        update_option('kiosk_last_chatgpt_processing', array(
+            'time' => current_time('mysql'),
+            'processed' => $processed_count,
+            'failed' => $failed_count
+        ));
+
+        // Reschedule if there are more posts to process
+        $remaining = new WP_Query(array(
+            'post_type' => 'post',
+            'meta_query' => array(
+                array(
+                    'key' => 'kiosk_processing_status',
+                    'value' => 'pending',
+                    'compare' => '='
+                )
+            ),
+            'posts_per_page' => 1,
+            'fields' => 'ids'
+        ));
+
+        if ($remaining->have_posts()) {
+            wp_schedule_single_event(time() + 120, 'kiosk_process_chatgpt_queue');
+        }
+    }
+
+    /**
+     * Process prepared JSON data with ChatGPT
+     * This is called during background processing
+     */
+    private function process_post_data_with_chatgpt($prepared_json)
+    {
+        $settings = get_option('kiosk_automation_settings', array());
+        $api_key = isset($settings['openai_api_key']) ? trim($settings['openai_api_key']) : '';
+        $model = isset($settings['openai_model']) ? $settings['openai_model'] : 'gpt-4o';
+
+        if (empty($api_key)) {
+            error_log('Kiosk Automation: OpenAI API key not configured');
+            return false;
+        }
+
+        // Read prompt files
+        $system_prompt = $this->read_prompt_file('system-prompt.txt');
+        $user_prompt_template = $this->read_prompt_file('user-prompt.txt');
+
+        if (!$system_prompt || !$user_prompt_template) {
+            error_log('Kiosk Automation: Prompt files not found');
+            return false;
+        }
+
+        // Replace placeholder in user prompt
+        $user_prompt = str_replace('[PASTE CLEANED JSON HERE]', $prepared_json, $user_prompt_template);
+
+        // Call OpenAI API
+        $response = $this->call_openai_api($api_key, $model, $system_prompt, $user_prompt);
+
+        if (!$response) {
+            error_log('Kiosk Automation: OpenAI API call failed');
+            return false;
+        }
+
+        return $response;
     }
 
     /**
@@ -974,6 +1172,43 @@ class Kiosk_Content_Automation
     }
 
     /**
+     * Manual ChatGPT processing trigger (AJAX)
+     */
+    public function manual_process_chatgpt()
+    {
+        check_ajax_referer('kiosk_admin_nonce', 'nonce');
+
+        if (!current_user_can('manage_options')) {
+            wp_send_json_error('Permission denied');
+        }
+
+        // Get count of pending posts before processing
+        $pending_query = new WP_Query(array(
+            'post_type' => 'post',
+            'meta_query' => array(
+                array(
+                    'key' => 'kiosk_processing_status',
+                    'value' => 'pending',
+                    'compare' => '='
+                )
+            ),
+            'posts_per_page' => -1,
+            'fields' => 'ids'
+        ));
+
+        $pending_before = $pending_query->found_posts;
+
+        // Process the queue
+        $this->process_chatgpt_queue();
+
+        // Get results
+        $last_processing = get_option('kiosk_last_chatgpt_processing', array());
+        $last_processing['pending_before'] = $pending_before;
+
+        wp_send_json_success($last_processing);
+    }
+
+    /**
      * Test API connection (AJAX)
      */
     public function test_api_connection()
@@ -986,7 +1221,7 @@ class Kiosk_Content_Automation
 
         // Get the API URL for debugging
         $api_url = $this->get_api_base_url();
-        
+
         $posts = $this->fetch_posts_from_api(1, 1);
 
         if ($posts && is_array($posts) && count($posts) > 0) {
@@ -1075,18 +1310,15 @@ class Kiosk_Content_Automation
         $prepared_json = $this->prepare_post_json($post_data);
         $prepared_data = json_decode($prepared_json, true);
 
-        // Test ChatGPT processing if enabled
+        // Test ChatGPT processing if enabled (for testing only)
         $chatgpt_result = null;
         $chatgpt_full_json = null;
         $settings = get_option('kiosk_automation_settings', array());
         $openai_enabled = isset($settings['openai_enabled']) && $settings['openai_enabled'];
 
         if ($openai_enabled) {
-            $result = $this->process_with_chatgpt($post_data);
-            if ($result !== false && is_array($result)) {
-                $chatgpt_result = $result['fields'];
-                $chatgpt_full_json = $result['full_json'];
-            }
+            // Test the new async processing method
+            $chatgpt_full_json = $this->process_post_data_with_chatgpt($prepared_json);
         }
 
         wp_send_json_success(array(
@@ -1100,11 +1332,10 @@ class Kiosk_Content_Automation
             'acf_data' => isset($post_data['acf']) ? $post_data['acf'] : array(),
             'prepared_json' => $prepared_data,
             'chatgpt_enabled' => $openai_enabled,
-            'chatgpt_result' => $chatgpt_result,
-            'chatgpt_full_json' => $chatgpt_full_json
+            'chatgpt_full_json' => $chatgpt_full_json,
+            'note' => 'Posts are now created immediately with ACF data. ChatGPT processing happens asynchronously in background.'
         ));
     }
-
 }
 
 // Initialize the class
