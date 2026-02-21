@@ -158,12 +158,19 @@
         $('#kiosk-fix-slugs').on('click', function(e) {
             e.preventDefault();
             
+            console.log('Fix slugs button clicked');
+            
             var $button = $(this);
             var $response = $('#kiosk-sync-response');
             
+            console.log('Button:', $button.length, 'Response div:', $response.length);
+            
             if (!confirm('This will update all posts with their correct titles and slugs from ChatGPT data. Continue?')) {
+                console.log('User cancelled operation');
                 return;
             }
+            
+            console.log('Starting AJAX request...');
             
             // Disable button and show loading
             $button.prop('disabled', true);
@@ -182,6 +189,8 @@
                 },
                 timeout: 120000, // 2 minute timeout for bulk updates
                 success: function(response) {
+                    console.log('AJAX Success:', response);
+                    
                     $button.prop('disabled', false);
                     $button.html('Fix Post Slugs from ChatGPT');
                     
@@ -209,6 +218,8 @@
                     }
                 },
                 error: function(xhr, status, error) {
+                    console.log('AJAX Error:', status, error, xhr);
+                    
                     $button.prop('disabled', false);
                     $button.html('Fix Post Slugs from ChatGPT');
                     
@@ -217,7 +228,7 @@
                     if (status === 'timeout') {
                         $response.html('<strong>Timeout:</strong> The operation is taking longer than expected. Some posts may have been updated. Please refresh and try again if needed.');
                     } else {
-                        $response.html('<strong>Error:</strong> ' + error);
+                        $response.html('<strong>Error:</strong> ' + error + '<br>Status: ' + status);
                     }
                 }
             });
