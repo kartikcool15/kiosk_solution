@@ -309,6 +309,41 @@ class Kiosk_Content_Automation
     }
 
     /**
+     * Check if URL should be excluded/filtered
+     * Returns true if URL should be skipped (WhatsApp, Telegram, SarkariResult, etc.)
+     */
+    private function should_exclude_url($url)
+    {
+        if (empty($url)) {
+            return true;
+        }
+
+        $url_lower = strtolower($url);
+
+        // Excluded domains and patterns
+        $excluded_patterns = array(
+            'whatsapp.com',
+            'wa.me',
+            'api.whatsapp.com',
+            'chat.whatsapp.com',
+            'web.whatsapp.com',
+            't.me',
+            'telegram.me',
+            'telegram.org',
+            'sarkariresult.com',
+            'www.sarkariresult.com'
+        );
+
+        foreach ($excluded_patterns as $pattern) {
+            if (strpos($url_lower, $pattern) !== false) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
      * Extract links from HTML and preserve them with their URLs
      * Converts <a href="url">text</a> to "text (url)"
      */
@@ -324,6 +359,12 @@ class Kiosk_Content_Automation
             $pattern,
             function ($matches) {
                 $url = trim($matches[1]);
+                
+                // Skip excluded URLs (WhatsApp, Telegram, SarkariResult)
+                if ($this->should_exclude_url($url)) {
+                    return ''; // Remove the link entirely
+                }
+
                 $text = wp_strip_all_tags($matches[2]);
                 $text = html_entity_decode($text, ENT_QUOTES | ENT_HTML5, 'UTF-8');
                 $text = trim($text);
@@ -385,6 +426,11 @@ class Kiosk_Content_Automation
                     $title = trim($title);
                     $url = trim($match[2]);
 
+                    // Skip excluded URLs (WhatsApp, Telegram, SarkariResult)
+                    if ($this->should_exclude_url($url)) {
+                        continue;
+                    }
+
                     if (!empty($url) && !empty($title)) {
                         $result['links'][] = array(
                             'title' => $title,
@@ -424,6 +470,12 @@ class Kiosk_Content_Automation
 
             foreach ($matches as $match) {
                 $url = trim($match[1]);
+                
+                // Skip excluded URLs (WhatsApp, Telegram, SarkariResult)
+                if ($this->should_exclude_url($url)) {
+                    continue;
+                }
+
                 $title = wp_strip_all_tags($match[2]);
                 $title = html_entity_decode($title, ENT_QUOTES | ENT_HTML5, 'UTF-8');
                 $title = trim($title);

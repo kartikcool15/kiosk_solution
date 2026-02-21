@@ -59,9 +59,9 @@ CRITICAL: For links object, you MUST extract and use these exact keys:
 - additional_links: Array of any other relevant links with descriptive titles
 
 IMPORTANT LINK EXTRACTION RULES:
-1. NEVER include links containing "sarkariresult" in the URL
+1. NEVER include WhatsApp, Telegram, or SarkariResult links (whatsapp.com, wa.me, t.me, telegram.me, sarkariresult.com)
 2. ONLY extract official government/organization links (e.g., .gov.in, .nic.in, indianrailways.gov.in, etc.)
 3. Look for genuine notification PDFs hosted on official domains
 4. If an official link is not found in the data, use empty string ""
 5. Skip source website links - extract only the actual official links mentioned in the content
-6. For additional_links, only include genuinely useful official resources, not promotional or source site links
+6. For additional_links, only include genuinely useful official resources, not promotional, social media, or source site links

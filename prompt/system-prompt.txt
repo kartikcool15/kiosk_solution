@@ -14,6 +14,7 @@ Rules:
 - Normalize rupee values as number without symbols.
 - Clean HTML formatting.
 - CRITICAL: Extract ALL URLs and categorize them in the links object with consistent keys.
+- NEVER include WhatsApp, Telegram, or SarkariResult links.
 - Use exact keys: apply_online, notification_pdf, admit_card, result, official_website.
 - Always include full valid URLs starting with http:// or https://.
 - If a specific link is not found, use empty string for that key.
