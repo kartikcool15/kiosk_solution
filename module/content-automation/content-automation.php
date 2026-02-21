@@ -931,6 +931,89 @@ class Kiosk_Content_Automation
     }
 
     /**
+     * Get or create organization taxonomy term
+     * Returns term ID or false on failure
+     */
+    private function get_or_create_organization_term($organization_name)
+    {
+        if (empty($organization_name)) {
+            return false;
+        }
+
+        // Clean and sanitize the organization name
+        $organization_name = trim($organization_name);
+        $organization_name = sanitize_text_field($organization_name);
+
+        if (empty($organization_name)) {
+            return false;
+        }
+
+        // Check if term exists by name
+        $term = get_term_by('name', $organization_name, 'organization');
+
+        if ($term && !is_wp_error($term)) {
+            return intval($term->term_id);
+        }
+
+        // Check by slug as fallback
+        $slug = sanitize_title($organization_name);
+        $term = get_term_by('slug', $slug, 'organization');
+
+        if ($term && !is_wp_error($term)) {
+            return intval($term->term_id);
+        }
+
+        // Term doesn't exist, create it
+        $result = wp_insert_term($organization_name, 'organization', array(
+            'slug' => $slug
+        ));
+
+        if (is_wp_error($result)) {
+            error_log('Kiosk Automation: Failed to create organization term: ' . $result->get_error_message());
+            return false;
+        }
+
+        return intval($result['term_id']);
+    }
+
+    /**
+     * Set organization taxonomy for a post from ChatGPT JSON
+     * Extracts organization value from JSON and assigns to post
+     */
+    private function set_post_organization($post_id, $chatgpt_json)
+    {
+        if (empty($chatgpt_json)) {
+            return false;
+        }
+
+        // Decode ChatGPT JSON
+        $chatgpt_data = json_decode($chatgpt_json, true);
+
+        if (!is_array($chatgpt_data) || empty($chatgpt_data['organization'])) {
+            return false;
+        }
+
+        $organization_name = $chatgpt_data['organization'];
+
+        // Get or create the term
+        $term_id = $this->get_or_create_organization_term($organization_name);
+
+        if (!$term_id) {
+            return false;
+        }
+
+        // Set the term for the post (replacing existing terms)
+        $result = wp_set_object_terms($post_id, $term_id, 'organization', false);
+
+        if (is_wp_error($result)) {
+            error_log('Kiosk Automation: Failed to set organization term for post ' . $post_id . ': ' . $result->get_error_message());
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
      * Check if post already exists (checks all post statuses)
      */
     private function post_exists_by_source_id($source_id)
@@ -1174,6 +1257,9 @@ class Kiosk_Content_Automation
                         'post_name' => sanitize_title($new_title) // Explicitly set the slug
                     ));
                 }
+
+                // Set organization taxonomy from ChatGPT JSON
+                $this->set_post_organization($post_id, $chatgpt_result);
 
                 // Publish the post now that ChatGPT processing is complete
                 wp_publish_post($post_id);
@@ -1944,6 +2030,9 @@ class Kiosk_Content_Automation
                 if (is_wp_error($result)) {
                     $error_count++;
                 } else {
+                    // Set organization taxonomy from ChatGPT JSON
+                    $this->set_post_organization($post_id, $chatgpt_json);
+                    
                     $updated_count++;
                 }
             }
