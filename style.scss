@@ -324,13 +324,11 @@ footer {
 	padding-right: 2.5rem;
 	max-width: 400px;
 	option {
-		background-color: $sidebar-bg;
 		color: $text-white;
 		padding: 0.5rem;
 
 		&:checked,
 		&:hover {
-			background-color: $primary-color;
 			color: $text-white;
 		}
 	}
