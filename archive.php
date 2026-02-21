@@ -27,7 +27,6 @@ get_header(); ?>
             <div class="posts-table">
                 <!-- Table Header -->
                 <div class="table-header">
-                    <div class="th-cell th-image">Image</div>
                     <div class="th-cell th-title">Title</div>
                     <div class="th-cell th-organization">Organization</div>
                     <div class="th-cell th-category">Category</div>
@@ -104,21 +103,6 @@ get_header(); ?>
                     $category_name = !empty($category) ? $category[0]->name : 'Uncategorized';
                 ?>
                     <div class="table-row">
-                        <div class="td-cell td-image" data-label="Image">
-                            <div class="post-thumbnail">
-                                <?php if (has_post_thumbnail()) : ?>
-                                    <img src="<?php echo get_the_post_thumbnail_url(get_the_ID(), 'thumbnail'); ?>" alt="<?php the_title(); ?>">
-                                <?php else : ?>
-                                    <div class="thumbnail-placeholder">
-                                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-                                            <circle cx="8.5" cy="8.5" r="1.5"></circle>
-                                            <polyline points="21 15 16 10 5 21"></polyline>
-                                        </svg>
-                                    </div>
-                                <?php endif; ?>
-                            </div>
-                        </div>
 
                         <div class="td-cell td-title" data-label="Title">
                             <a href="<?php echo esc_url(get_permalink($post_id)); ?>" class="post-title-link">
