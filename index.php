@@ -48,17 +48,19 @@
                     <div class="card-content">
                         <div class="items">
                             <?php while ($cat_posts->have_posts()) : $cat_posts->the_post();
-                                $chatgpt_json = get_post_meta(get_the_ID(), 'kiosk_chatgpt_json', true);
+                                $post_id = get_the_ID();
+                                $chatgpt_json = get_post_meta($post_id, 'kiosk_chatgpt_json', true);
                                 $data = $chatgpt_json ? json_decode($chatgpt_json, true) : array();
 
                                 $organization = !empty($data['organization']) ? $data['organization'] : 'N/A';
                                 $start_date = !empty($data['start_date']) ? $data['start_date'] : '';
                                 $last_date = !empty($data['last_date']) ? $data['last_date'] : '';
+                                $post_title = !empty($data['post_title']) ? $data['post_title'] : get_the_title($post_id);
                             ?>
                                 <div class="item">
                                     <div class="key">
-                                        <a href="<?php the_permalink(); ?>">
-                                            <?php echo $data['post_title']; ?>
+                                        <a href="<?php echo esc_url(get_permalink($post_id)); ?>">
+                                            <?php echo esc_html($post_title); ?>
                                         </a>
                                     </div>
 

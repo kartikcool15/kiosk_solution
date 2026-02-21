@@ -40,8 +40,10 @@ get_header(); ?>
                 <!-- Table Body -->
                 <?php while (have_posts()) : the_post();
                     // Get the JSON data
-                    $json_data = get_post_meta(get_the_ID(), 'kiosk_chatgpt_json', true);
+                    $post_id = get_the_ID();
+                    $json_data = get_post_meta($post_id, 'kiosk_chatgpt_json', true);
                     $data = json_decode($json_data, true);
+                    $post_title = !empty($data['post_title']) ? $data['post_title'] : get_the_title($post_id);
 
                     $organization = !empty($data['organization']) ? $data['organization'] : 'N/A';
 
@@ -99,8 +101,8 @@ get_header(); ?>
 
 
                         <div class="td-cell td-title" data-label="Title">
-                            <a href="<?php the_permalink(); ?>" class="post-title-link">
-                                <?php echo $data['post_title']; ?>
+                            <a href="<?php echo esc_url(get_permalink($post_id)); ?>" class="post-title-link">
+                                <?php echo esc_html($post_title); ?>
                             </a>
                         </div>
 
@@ -134,7 +136,7 @@ get_header(); ?>
                         <?php endif; ?>
 
                         <div class="td-cell td-action" data-label="Action">
-                            <a href="<?php the_permalink(); ?>" class="btn-view">
+                            <a href="<?php echo esc_url(get_permalink($post_id)); ?>" class="btn-view">
                                 View Details
                             </a>
                         </div>
