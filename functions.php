@@ -29,7 +29,23 @@ function kiosk_enqueue_styles() {
 add_action('wp_enqueue_scripts', 'kiosk_enqueue_styles');
 
 function kiosk_enqueue_scripts() {
-    wp_enqueue_script('kiosk-main', get_template_directory_uri() . '/assets/main.js', array('jquery'), '1.0.0', true);
+    // Enqueue SlimSelect library
+    wp_enqueue_style(
+        'slimselect-css',
+        'https://cdn.jsdelivr.net/npm/slim-select@latest/dist/slimselect.css',
+        array(),
+        null
+    );
+
+    wp_enqueue_script(
+        'slimselect-js',
+        'https://cdn.jsdelivr.net/npm/slim-select@latest/dist/slimselect.min.js',
+        array(),
+        null,
+        true
+    );
+
+    wp_enqueue_script('kiosk-main', get_template_directory_uri() . '/assets/main.js', array('jquery', 'slimselect-js'), '1.0.0', true);
 }
 add_action('wp_enqueue_scripts', 'kiosk_enqueue_scripts');
 

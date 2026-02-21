@@ -8,15 +8,28 @@
     $(document).ready(function() {
         
         /**
-         * Organization Dropdown - Redirect to Archive Page
+         * Initialize SlimSelect for Organization Dropdown
          */
-        $('#organization-dropdown').on('change', function() {
-            var selectedUrl = $(this).val();
-            
-            if (selectedUrl && selectedUrl !== '') {
-                window.location.href = selectedUrl;
-            }
-        });
+        var organizationSlim = null;
+        
+        if ($('#organization-dropdown').length) {
+            organizationSlim = new SlimSelect({
+                select: '#organization-dropdown',
+                settings: {
+                    searchPlaceholder: 'Search organizations...',
+                    searchText: 'No organizations found',
+                    searchingText: 'Searching...',
+                    closeOnSelect: true
+                },
+                events: {
+                    afterChange: function(newVal) {
+                        if (newVal && newVal.length > 0 && newVal[0].value !== '') {
+                            window.location.href = newVal[0].value;
+                        }
+                    }
+                }
+            });
+        }
         
     });
     
