@@ -288,12 +288,6 @@ footer {
 }
 
 /* Organization Dropdown */
-.sidebar-dropdown-section {
-	padding: 1rem;
-	border-top: 1px solid $border-color;
-	border-bottom: 1px solid $border-color;
-	margin: 0.5rem 0;
-}
 
 .sidebar-dropdown-label {
 	display: flex;
@@ -328,19 +322,7 @@ footer {
 	background-position: right 0.75rem center;
 	background-size: 16px;
 	padding-right: 2.5rem;
-
-	&:focus {
-		outline: none;
-		border-color: $primary-color;
-		background-color: $sidebar-bg;
-		box-shadow: 0 0 0 3px rgba(99, 71, 234, 0.1);
-	}
-
-	&:hover {
-		border-color: rgba(99, 71, 234, 0.5);
-		background-color: $sidebar-bg;
-	}
-
+	max-width: 400px;
 	option {
 		background-color: $sidebar-bg;
 		color: $text-white;
