@@ -54,6 +54,11 @@ class Kiosk_Content_Automation
         add_filter('post_row_actions', array($this, 'add_update_post_action'), 10, 2);
         add_action('admin_footer', array($this, 'add_update_post_script'));
         add_action('wp_ajax_kiosk_update_individual_post', array($this, 'update_individual_post_ajax'));
+
+        // Bulk actions for updating posts
+        add_filter('bulk_actions-edit-post', array($this, 'add_bulk_update_action'));
+        add_filter('handle_bulk_actions-edit-post', array($this, 'handle_bulk_update_action'), 10, 3);
+        add_action('admin_notices', array($this, 'bulk_update_admin_notice'));
     }
 
     /**
@@ -1531,6 +1536,153 @@ class Kiosk_Content_Automation
             'post_id' => $post_id,
             'source_id' => $source_id
         ));
+    }
+
+    /**
+     * Add bulk update action to posts list
+     */
+    public function add_bulk_update_action($bulk_actions)
+    {
+        $bulk_actions['kiosk_bulk_update'] = '🔄 Update from Source';
+        return $bulk_actions;
+    }
+
+    /**
+     * Handle bulk update action
+     */
+    public function handle_bulk_update_action($redirect_to, $action, $post_ids)
+    {
+        if ($action !== 'kiosk_bulk_update') {
+            return $redirect_to;
+        }
+
+        if (empty($post_ids)) {
+            return $redirect_to;
+        }
+
+        $updated = 0;
+        $skipped = 0;
+        $errors = 0;
+
+        foreach ($post_ids as $post_id) {
+            // Get source post ID
+            $source_id = get_post_meta($post_id, 'kiosk_source_post_id', true);
+            
+            if (empty($source_id)) {
+                $skipped++;
+                continue;
+            }
+
+            // Fetch fresh data from API
+            $url = add_query_arg(array(
+                '_embed' => 1,
+                'acf_format' => 'standard'
+            ), $this->get_api_base_url() . '/posts/' . $source_id);
+            
+            $response = wp_remote_get($url, array(
+                'timeout' => 30,
+                'sslverify' => false
+            ));
+            
+            if (is_wp_error($response)) {
+                $errors++;
+                continue;
+            }
+            
+            $response_code = wp_remote_retrieve_response_code($response);
+            if ($response_code !== 200) {
+                $errors++;
+                continue;
+            }
+            
+            $post_data = json_decode(wp_remote_retrieve_body($response), true);
+            
+            if (!$post_data || !isset($post_data['id'])) {
+                $errors++;
+                continue;
+            }
+            
+            // Prepare new JSON
+            $prepared_json = $this->prepare_post_json($post_data);
+            
+            // Use ACF post_title if available
+            $title_to_use = isset($post_data['acf']['post_title']) && !empty($post_data['acf']['post_title']) 
+                ? $post_data['acf']['post_title'] 
+                : $post_data['title']['rendered'];
+            $clean_title = $this->clean_title($title_to_use);
+            
+            // Update post
+            $update_result = wp_update_post(array(
+                'ID' => $post_id,
+                'post_title' => sanitize_text_field($clean_title),
+                'post_content' => wp_kses_post($post_data['content']['rendered']),
+                'post_excerpt' => isset($post_data['excerpt']['rendered']) ? wp_kses_post($post_data['excerpt']['rendered']) : '',
+                'post_status' => 'draft', // Back to draft for re-processing
+            ));
+            
+            if (is_wp_error($update_result)) {
+                $errors++;
+                continue;
+            }
+            
+            // Update featured image if available
+            if (isset($post_data['_embedded']['wp:featuredmedia'][0]['source_url'])) {
+                $image_url = $post_data['_embedded']['wp:featuredmedia'][0]['source_url'];
+                $featured_image_id = $this->download_and_attach_image($image_url, $title_to_use);
+                if ($featured_image_id > 0) {
+                    set_post_thumbnail($post_id, $featured_image_id);
+                }
+            }
+            
+            // Update meta fields
+            update_post_meta($post_id, 'kiosk_raw_post_data', $prepared_json);
+            update_post_meta($post_id, 'kiosk_processing_status', 'pending');
+            
+            // Clear old ChatGPT data
+            delete_post_meta($post_id, 'kiosk_chatgpt_json');
+            
+            $updated++;
+        }
+
+        // Schedule ChatGPT processing if posts were updated
+        if ($updated > 0) {
+            $this->schedule_chatgpt_processing();
+        }
+
+        // Redirect with results
+        $redirect_to = add_query_arg(array(
+            'kiosk_bulk_updated' => $updated,
+            'kiosk_bulk_skipped' => $skipped,
+            'kiosk_bulk_errors' => $errors
+        ), $redirect_to);
+
+        return $redirect_to;
+    }
+
+    /**
+     * Display admin notice after bulk update
+     */
+    public function bulk_update_admin_notice()
+    {
+        if (!isset($_GET['kiosk_bulk_updated'])) {
+            return;
+        }
+
+        $updated = intval($_GET['kiosk_bulk_updated']);
+        $skipped = isset($_GET['kiosk_bulk_skipped']) ? intval($_GET['kiosk_bulk_skipped']) : 0;
+        $errors = isset($_GET['kiosk_bulk_errors']) ? intval($_GET['kiosk_bulk_errors']) : 0;
+
+        printf(
+            '<div class="notice notice-success is-dismissible"><p>'
+            . '<strong>Bulk Update Complete:</strong> '
+            . '%d post(s) updated and queued for ChatGPT processing. '
+            . '%d post(s) skipped (no source ID). '
+            . '%d error(s).'
+            . '</p></div>',
+            $updated,
+            $skipped,
+            $errors
+        );
     }
 
     /**
