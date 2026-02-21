@@ -330,174 +330,6 @@ footer {
 }
 
 /* SlimSelect Custom Styling - Match Dark Theme */
-.ss-main {
-	width: 100% !important;
-	max-width: 400px;
-	
-	.ss-single-selected {
-		background-color: $main-bg !important;
-		border: 1px solid $border-color !important;
-		border-radius: 8px !important;
-		padding: 0.625rem 0.875rem !important;
-		color: $text-white !important;
-		font-size: 0.875rem !important;
-		font-weight: 500 !important;
-		min-height: auto !important;
-		height: auto !important;
-		transition: all 0.3s ease !important;
-
-		&:hover {
-			border-color: rgba($primary-color, 0.5) !important;
-		}
-
-		&:focus,
-		&.ss-open-below,
-		&.ss-open-above {
-			border-color: $primary-color !important;
-			box-shadow: 0 0 0 3px rgba($primary-color, 0.1) !important;
-		}
-
-		.placeholder {
-			color: $text-gray !important;
-		}
-
-		.ss-arrow {
-			border-color: $text-gray !important;
-			
-			path {
-				stroke: $text-gray !important;
-			}
-		}
-	}
-
-	.ss-content {
-		background-color: $main-bg !important;
-		border: 1px solid $border-color !important;
-		border-radius: 8px !important;
-		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5) !important;
-		margin-top: 0.25rem !important;
-		max-height: 300px !important;
-		overflow: hidden !important;
-
-		.ss-search {
-			background-color: $sidebar-item-hover !important;
-			border-bottom: 1px solid $border-color !important;
-			padding: 0.75rem !important;
-
-			input {
-				background-color: $main-bg !important;
-				border: 1px solid $border-color !important;
-				border-radius: 6px !important;
-				color: $text-white !important;
-				padding: 0.5rem 0.75rem !important;
-				font-size: 0.875rem !important;
-				width: 100% !important;
-
-				&::placeholder {
-					color: $text-gray !important;
-				}
-
-				&:focus {
-					outline: none !important;
-					border-color: $primary-color !important;
-					box-shadow: 0 0 0 2px rgba($primary-color, 0.1) !important;
-				}
-			}
-		}
-
-		.ss-list {
-			background-color: $main-bg !important;
-			max-height: 250px !important;
-			overflow-y: auto !important;
-			padding: 0.25rem !important;
-
-			/* Custom Scrollbar for dropdown list */
-			&::-webkit-scrollbar {
-				width: 8px;
-			}
-
-			&::-webkit-scrollbar-track {
-				background: $sidebar-item-hover;
-				border-radius: 4px;
-			}
-
-			&::-webkit-scrollbar-thumb {
-				background: rgba($text-gray, 0.5);
-				border-radius: 4px;
-
-				&:hover {
-					background: rgba($text-gray, 0.8);
-				}
-			}
-
-			.ss-option {
-				background-color: transparent !important;
-				color: $text-white !important;
-				padding: 0.625rem 0.875rem !important;
-				border-radius: 6px !important;
-				font-size: 0.875rem !important;
-				font-weight: 400 !important;
-				margin-bottom: 2px !important;
-				cursor: pointer !important;
-				transition: all 0.2s ease !important;
-
-				&:hover,
-				&.ss-highlighted {
-					background-color: $sidebar-item-hover !important;
-					color: $primary-color !important;
-				}
-
-				&.ss-disabled {
-					background-color: transparent !important;
-					color: $text-dark !important;
-					cursor: not-allowed !important;
-					opacity: 0.5 !important;
-
-					&:hover {
-						background-color: transparent !important;
-						color: $text-dark !important;
-					}
-				}
-
-				&.ss-selected {
-					background-color: rgba($primary-color, 0.15) !important;
-					color: $primary-color !important;
-					font-weight: 600 !important;
-
-					&:hover {
-						background-color: rgba($primary-color, 0.25) !important;
-					}
-				}
-			}
-
-			.ss-optgroup {
-				.ss-optgroup-label {
-					background-color: $sidebar-item-hover !important;
-					color: $text-white !important;
-					font-weight: 600 !important;
-					font-size: 0.75rem !important;
-					text-transform: uppercase !important;
-					letter-spacing: 0.5px !important;
-					padding: 0.5rem 0.875rem !important;
-					border-radius: 6px !important;
-					margin-bottom: 0.25rem !important;
-				}
-
-				.ss-option {
-					padding-left: 1.5rem !important;
-				}
-			}
-		}
-
-		.ss-search-empty {
-			background-color: $main-bg !important;
-			color: $text-gray !important;
-			padding: 2rem 1rem !important;
-			text-align: center !important;
-			font-size: 0.875rem !important;
-		}
-	}
-}
 
 /* Responsive */
 @media (max-width: 768px) {
@@ -1401,6 +1233,177 @@ form {
 			justify-content: space-between;
 			.card-content {
 				flex: 1;
+			}
+		}
+	}
+}
+
+.topbar {
+	.ss-main {
+		width: 100% !important;
+		max-width: 400px;
+
+		.ss-single-selected {
+			background-color: $main-bg !important;
+			border: 1px solid $border-color !important;
+			border-radius: 8px !important;
+			padding: 0.625rem 0.875rem !important;
+			color: $text-white !important;
+			font-size: 0.875rem !important;
+			font-weight: 500 !important;
+			min-height: auto !important;
+			height: auto !important;
+			transition: all 0.3s ease !important;
+
+			&:hover {
+				border-color: rgba($primary-color, 0.5) !important;
+			}
+
+			&:focus,
+			&.ss-open-below,
+			&.ss-open-above {
+				border-color: $primary-color !important;
+				box-shadow: 0 0 0 3px rgba($primary-color, 0.1) !important;
+			}
+
+			.placeholder {
+				color: $text-gray !important;
+			}
+
+			.ss-arrow {
+				border-color: $text-gray !important;
+
+				path {
+					stroke: $text-gray !important;
+				}
+			}
+		}
+
+		.ss-content {
+			background-color: $main-bg !important;
+			border: 1px solid $border-color !important;
+			border-radius: 8px !important;
+			box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5) !important;
+			margin-top: 0.25rem !important;
+			max-height: 300px !important;
+			overflow: hidden !important;
+
+			.ss-search {
+				background-color: $sidebar-item-hover !important;
+				border-bottom: 1px solid $border-color !important;
+				padding: 0.75rem !important;
+
+				input {
+					background-color: $main-bg !important;
+					border: 1px solid $border-color !important;
+					border-radius: 6px !important;
+					color: $text-white !important;
+					padding: 0.5rem 0.75rem !important;
+					font-size: 0.875rem !important;
+					width: 100% !important;
+
+					&::placeholder {
+						color: $text-gray !important;
+					}
+
+					&:focus {
+						outline: none !important;
+						border-color: $primary-color !important;
+						box-shadow: 0 0 0 2px rgba($primary-color, 0.1) !important;
+					}
+				}
+			}
+
+			.ss-list {
+				background-color: $main-bg !important;
+				max-height: 250px !important;
+				overflow-y: auto !important;
+				padding: 0.25rem !important;
+
+				/* Custom Scrollbar for dropdown list */
+				&::-webkit-scrollbar {
+					width: 8px;
+				}
+
+				&::-webkit-scrollbar-track {
+					background: $sidebar-item-hover;
+					border-radius: 4px;
+				}
+
+				&::-webkit-scrollbar-thumb {
+					background: rgba($text-gray, 0.5);
+					border-radius: 4px;
+
+					&:hover {
+						background: rgba($text-gray, 0.8);
+					}
+				}
+
+				.ss-option {
+					background-color: transparent !important;
+					color: $text-white !important;
+					padding: 0.625rem 0.875rem !important;
+					border-radius: 6px !important;
+					font-size: 0.875rem !important;
+					font-weight: 400 !important;
+					margin-bottom: 2px !important;
+					cursor: pointer !important;
+					transition: all 0.2s ease !important;
+
+					&:hover,
+					&.ss-highlighted {
+						background-color: $sidebar-item-hover !important;
+						color: $primary-color !important;
+					}
+
+					&.ss-disabled {
+						background-color: transparent !important;
+						color: $text-dark !important;
+						cursor: not-allowed !important;
+						opacity: 0.5 !important;
+
+						&:hover {
+							background-color: transparent !important;
+							color: $text-dark !important;
+						}
+					}
+
+					&.ss-selected {
+						background-color: rgba($primary-color, 0.15) !important;
+						color: $primary-color !important;
+						font-weight: 600 !important;
+
+						&:hover {
+							background-color: rgba($primary-color, 0.25) !important;
+						}
+					}
+				}
+
+				.ss-optgroup {
+					.ss-optgroup-label {
+						background-color: $sidebar-item-hover !important;
+						color: $text-white !important;
+						font-weight: 600 !important;
+						font-size: 0.75rem !important;
+						text-transform: uppercase !important;
+						letter-spacing: 0.5px !important;
+						padding: 0.5rem 0.875rem !important;
+						border-radius: 6px !important;
+						margin-bottom: 0.25rem !important;
+					}
+
+					.ss-option {
+						padding-left: 1.5rem !important;
+					}
+				}
+			}
+
+			.ss-search-empty {
+				background-color: $main-bg !important;
+				color: $text-gray !important;
+				padding: 2rem 1rem !important;
+				text-align: center !important;
+				font-size: 0.875rem !important;
 			}
 		}
 	}
