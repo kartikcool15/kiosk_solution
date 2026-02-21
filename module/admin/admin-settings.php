@@ -326,7 +326,16 @@ class Kiosk_Admin_Settings
                         <button type="button" class="button button-secondary button-large" id="kiosk-manual-sync">
                             <?php _e('Run Manual Sync Now', 'kiosk'); ?>
                         </button>
+
+                        <button type="button" class="button button-secondary button-large" id="kiosk-fix-slugs">
+                            <?php _e('Fix Post Slugs from ChatGPT', 'kiosk'); ?>
+                        </button>
                     </div>
+
+                    <p class="description" style="margin-top: 10px;">
+                        <strong><?php _e('Note:', 'kiosk'); ?></strong> 
+                        <?php _e('The "Fix Post Slugs" button updates all posts with correct titles and URL slugs from their ChatGPT processed data. Use this if posts are missing proper URLs or have incorrect titles.', 'kiosk'); ?>
+                    </p>
 
                     <div id="kiosk-sync-response" class="kiosk-response" style="display:none;"></div>
                 </div>

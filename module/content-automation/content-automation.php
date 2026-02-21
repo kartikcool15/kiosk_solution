@@ -43,6 +43,7 @@ class Kiosk_Content_Automation
         add_action('wp_ajax_kiosk_test_api_connection', array($this, 'test_api_connection'));
         add_action('wp_ajax_kiosk_fetch_single_post', array($this, 'fetch_single_post_ajax'));
         add_action('wp_ajax_kiosk_process_chatgpt_now', array($this, 'manual_process_chatgpt'));
+        add_action('wp_ajax_kiosk_fix_post_slugs', array($this, 'fix_post_slugs_from_chatgpt'));
 
         // Admin column for ChatGPT status
         add_filter('manage_posts_columns', array($this, 'add_chatgpt_status_column'));
@@ -1103,6 +1104,20 @@ class Kiosk_Content_Automation
                 update_post_meta($post_id, 'kiosk_chatgpt_json', $chatgpt_result);
                 update_post_meta($post_id, 'kiosk_processing_status', 'completed');
 
+                // Decode ChatGPT result to extract post_title
+                $chatgpt_data = json_decode($chatgpt_result, true);
+                
+                // Update post title and slug from ChatGPT response
+                if (!empty($chatgpt_data['post_title'])) {
+                    $new_title = sanitize_text_field($chatgpt_data['post_title']);
+                    
+                    wp_update_post(array(
+                        'ID' => $post_id,
+                        'post_title' => $new_title,
+                        'post_name' => sanitize_title($new_title) // Explicitly set the slug
+                    ));
+                }
+
                 // Publish the post now that ChatGPT processing is complete
                 wp_publish_post($post_id);
 
@@ -1657,6 +1672,87 @@ class Kiosk_Content_Automation
             'chatgpt_enabled' => $openai_enabled,
             'chatgpt_full_json' => $chatgpt_full_json,
             'note' => 'Posts are now created immediately with ACF data. ChatGPT processing happens asynchronously in background.'
+        ));
+    }
+
+    /**
+     * Fix post titles and slugs from ChatGPT data (AJAX)
+     * This updates all posts that have ChatGPT data with the correct title and slug
+     */
+    public function fix_post_slugs_from_chatgpt()
+    {
+        check_ajax_referer('kiosk_admin_nonce', 'nonce');
+
+        if (!current_user_can('manage_options')) {
+            wp_send_json_error('Permission denied');
+        }
+
+        // Get all posts that have ChatGPT data
+        $args = array(
+            'post_type' => 'post',
+            'post_status' => 'any',
+            'posts_per_page' => -1,
+            'meta_query' => array(
+                array(
+                    'key' => 'kiosk_chatgpt_json',
+                    'compare' => 'EXISTS'
+                )
+            )
+        );
+
+        $query = new WP_Query($args);
+        $updated_count = 0;
+        $skipped_count = 0;
+        $error_count = 0;
+
+        if ($query->have_posts()) {
+            while ($query->have_posts()) {
+                $query->the_post();
+                $post_id = get_the_ID();
+
+                // Get ChatGPT JSON
+                $chatgpt_json = get_post_meta($post_id, 'kiosk_chatgpt_json', true);
+                
+                if (empty($chatgpt_json)) {
+                    $skipped_count++;
+                    continue;
+                }
+
+                // Decode JSON
+                $chatgpt_data = json_decode($chatgpt_json, true);
+                
+                if (!is_array($chatgpt_data) || empty($chatgpt_data['post_title'])) {
+                    $skipped_count++;
+                    continue;
+                }
+
+                // Get the new title from ChatGPT data
+                $new_title = sanitize_text_field($chatgpt_data['post_title']);
+                $new_slug = sanitize_title($new_title);
+
+                // Update post with new title and slug
+                $result = wp_update_post(array(
+                    'ID' => $post_id,
+                    'post_title' => $new_title,
+                    'post_name' => $new_slug
+                ), true);
+
+                if (is_wp_error($result)) {
+                    $error_count++;
+                } else {
+                    $updated_count++;
+                }
+            }
+        }
+
+        wp_reset_postdata();
+
+        wp_send_json_success(array(
+            'message' => "Updated {$updated_count} posts with correct titles and slugs",
+            'updated' => $updated_count,
+            'skipped' => $skipped_count,
+            'errors' => $error_count,
+            'total_checked' => $query->found_posts
         ));
     }
 }
