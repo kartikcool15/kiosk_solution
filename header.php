@@ -17,3 +17,31 @@
         <?php get_sidebar(); ?>
 
         <main class="main-content">
+            <div class="topbar">
+                <select class="sidebar-dropdown-select" id="organization-dropdown">
+                    <option value="">-- Choose Organization --</option>
+                    <?php
+                    $organizations = get_terms(array(
+                        'taxonomy' => 'organization',
+                        'hide_empty' => true,
+                        'orderby' => 'name',
+                        'order' => 'ASC'
+                    ));
+
+                    if (!empty($organizations) && !is_wp_error($organizations)) :
+                        foreach ($organizations as $org) :
+                            $term_link = get_term_link($org);
+                            $selected = (is_tax('organization', $org->slug)) ? 'selected' : '';
+                    ?>
+                            <option value="<?php echo esc_url($term_link); ?>" <?php echo $selected; ?>>
+                                <?php echo esc_html($org->name); ?> (<?php echo $org->count; ?>)
+                            </option>
+                    <?php endforeach;
+                    endif;
+                    ?>
+                </select>
+                <ul class="top-menu">
+                    <li><a href="<?php echo home_url(); ?>">Home</a></li>
+                    <li>Login</li>
+                </ul>
+            </div>

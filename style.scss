@@ -114,7 +114,25 @@ footer {
 	background-color: $main-bg;
 	min-height: 100vh;
 	overflow-y: auto;
-
+	.topbar {
+		padding: 8px 24px;
+		border-bottom: 1px solid #1d1d19;
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		background: #111111;
+		select {
+			padding: 0.25rem 1rem;
+			max-width: 400px;
+		}
+		ul.top-menu {
+			display: flex;
+			align-items: center;
+			list-style-type: none;
+			gap: 10px;
+			justify-content: flex-end;
+		}
+	}
 	article {
 		h1 {
 			color: $text-white;
@@ -178,7 +196,7 @@ footer {
 }
 
 .sidebar-header {
-	padding: 1.5rem;
+	padding: 5px 24px;
 	display: flex;
 	align-items: center;
 	justify-content: space-between;

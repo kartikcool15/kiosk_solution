@@ -16,156 +16,158 @@ get_header(); ?>
     }
 ?>
     <header class="page-header">
-        <h1 class="page-title"><?php the_archive_title(); ?></h1>
+        <h1 class="page-title"><?php single_cat_title(); ?></h1>
         <p class="page-description">
-            <?php echo $wp_query->found_posts; ?> posts found
+            <?php echo $wp_query->found_posts; ?> notifications found
         </p>
     </header>
+    <div class="main-content-wrapper">
 
-    <div class="posts-table-wrapper">
-        <div class="posts-table">
-            <!-- Table Header -->
-            <div class="table-header">
-                <div class="th-cell th-image">Image</div>
-                <div class="th-cell th-title">Title</div>
-                <div class="th-cell th-organization">Organization</div>
-                <div class="th-cell th-category">Category</div>
-                <?php if ($category_slug === 'admit-card'): ?>
-                    <div class="th-cell th-date">Admit Card Date</div>
-                    <div class="th-cell th-result">Result Date</div>
-                <?php elseif ($category_slug === 'result'): ?>
-                    <div class="th-cell th-result">Result Date</div>
-                    <div class="th-cell th-next">Next Date</div>
-                <?php else: ?>
-                    <div class="th-cell th-start">Start Date</div>
-                    <div class="th-cell th-last">Last Date</div>
-                <?php endif; ?>
-                <div class="th-cell th-action">Action</div>
-            </div>
+        <div class="posts-table-wrapper">
+            <div class="posts-table">
+                <!-- Table Header -->
+                <div class="table-header">
+                    <div class="th-cell th-image">Image</div>
+                    <div class="th-cell th-title">Title</div>
+                    <div class="th-cell th-organization">Organization</div>
+                    <div class="th-cell th-category">Category</div>
+                    <?php if ($category_slug === 'admit-card'): ?>
+                        <div class="th-cell th-date">Admit Card Date</div>
+                        <div class="th-cell th-result">Result Date</div>
+                    <?php elseif ($category_slug === 'result'): ?>
+                        <div class="th-cell th-result">Result Date</div>
+                        <div class="th-cell th-next">Next Date</div>
+                    <?php else: ?>
+                        <div class="th-cell th-start">Start Date</div>
+                        <div class="th-cell th-last">Last Date</div>
+                    <?php endif; ?>
+                    <div class="th-cell th-action">Action</div>
+                </div>
 
-            <!-- Table Body -->
-            <?php while (have_posts()) : the_post();
-                // Get the JSON data
-                $post_id = get_the_ID();
-                $json_data = get_post_meta($post_id, 'kiosk_chatgpt_json', true);
-                $data = json_decode($json_data, true);
+                <!-- Table Body -->
+                <?php while (have_posts()) : the_post();
+                    // Get the JSON data
+                    $post_id = get_the_ID();
+                    $json_data = get_post_meta($post_id, 'kiosk_chatgpt_json', true);
+                    $data = json_decode($json_data, true);
 
-                $organization = !empty($data['organization']) ? $data['organization'] : 'N/A';
+                    $organization = !empty($data['organization']) ? $data['organization'] : 'N/A';
 
-                // Handle dates - could be object from ChatGPT or array of objects or string from fallback
-                $dates_obj = isset($data['dates']) ? $data['dates'] : array();
-                $start_date = 'N/A';
-                $last_date = 'N/A';
-                $admit_card_date = 'N/A';
-                $result_date = 'N/A';
-                $next_date = 'N/A';
+                    // Handle dates - could be object from ChatGPT or array of objects or string from fallback
+                    $dates_obj = isset($data['dates']) ? $data['dates'] : array();
+                    $start_date = 'N/A';
+                    $last_date = 'N/A';
+                    $admit_card_date = 'N/A';
+                    $result_date = 'N/A';
+                    $next_date = 'N/A';
 
-                if (is_array($dates_obj) && !empty($dates_obj)) {
-                    // Check if it's an array of date objects with 'event' and 'date' keys
-                    if (isset($dates_obj[0]) && is_array($dates_obj[0]) && isset($dates_obj[0]['event'])) {
-                        foreach ($dates_obj as $date_item) {
-                            $event_lower = strtolower($date_item['event']);
-                            if ((strpos($event_lower, 'start') !== false || strpos($event_lower, 'begin') !== false) && $start_date === 'N/A') {
-                                $start_date = $date_item['date'];
-                            } elseif ((strpos($event_lower, 'last') !== false || strpos($event_lower, 'end') !== false || strpos($event_lower, 'closing') !== false) && $last_date === 'N/A') {
-                                $last_date = $date_item['date'];
-                            } elseif ((strpos($event_lower, 'admit') !== false || strpos($event_lower, 'hall ticket') !== false) && $admit_card_date === 'N/A') {
-                                $admit_card_date = $date_item['date'];
-                            } elseif ((strpos($event_lower, 'result') !== false || strpos($event_lower, 'declaration') !== false) && $result_date === 'N/A') {
-                                $result_date = $date_item['date'];
-                            } elseif ((strpos($event_lower, 'counsel') !== false || strpos($event_lower, 'interview') !== false || strpos($event_lower, 'next') !== false) && $next_date === 'N/A') {
-                                $next_date = $date_item['date'];
+                    if (is_array($dates_obj) && !empty($dates_obj)) {
+                        // Check if it's an array of date objects with 'event' and 'date' keys
+                        if (isset($dates_obj[0]) && is_array($dates_obj[0]) && isset($dates_obj[0]['event'])) {
+                            foreach ($dates_obj as $date_item) {
+                                $event_lower = strtolower($date_item['event']);
+                                if ((strpos($event_lower, 'start') !== false || strpos($event_lower, 'begin') !== false) && $start_date === 'N/A') {
+                                    $start_date = $date_item['date'];
+                                } elseif ((strpos($event_lower, 'last') !== false || strpos($event_lower, 'end') !== false || strpos($event_lower, 'closing') !== false) && $last_date === 'N/A') {
+                                    $last_date = $date_item['date'];
+                                } elseif ((strpos($event_lower, 'admit') !== false || strpos($event_lower, 'hall ticket') !== false) && $admit_card_date === 'N/A') {
+                                    $admit_card_date = $date_item['date'];
+                                } elseif ((strpos($event_lower, 'result') !== false || strpos($event_lower, 'declaration') !== false) && $result_date === 'N/A') {
+                                    $result_date = $date_item['date'];
+                                } elseif ((strpos($event_lower, 'counsel') !== false || strpos($event_lower, 'interview') !== false || strpos($event_lower, 'next') !== false) && $next_date === 'N/A') {
+                                    $next_date = $date_item['date'];
+                                }
                             }
                         }
-                    }
-                    // Or ChatGPT format - dates as associative array
-                    elseif (isset($dates_obj['start_date']) || isset($dates_obj['last_date']) || isset($dates_obj['admit_card_date']) || isset($dates_obj['result_date'])) {
-                        $start_date = !empty($dates_obj['start_date']) ? $dates_obj['start_date'] : 'N/A';
-                        $last_date = !empty($dates_obj['last_date']) ? $dates_obj['last_date'] : 'N/A';
-                        $admit_card_date = !empty($dates_obj['admit_card_date']) ? $dates_obj['admit_card_date'] : 'N/A';
-                        $result_date = !empty($dates_obj['result_date']) ? $dates_obj['result_date'] : 'N/A';
+                        // Or ChatGPT format - dates as associative array
+                        elseif (isset($dates_obj['start_date']) || isset($dates_obj['last_date']) || isset($dates_obj['admit_card_date']) || isset($dates_obj['result_date'])) {
+                            $start_date = !empty($dates_obj['start_date']) ? $dates_obj['start_date'] : 'N/A';
+                            $last_date = !empty($dates_obj['last_date']) ? $dates_obj['last_date'] : 'N/A';
+                            $admit_card_date = !empty($dates_obj['admit_card_date']) ? $dates_obj['admit_card_date'] : 'N/A';
+                            $result_date = !empty($dates_obj['result_date']) ? $dates_obj['result_date'] : 'N/A';
 
-                        // Check for counselling or similar next dates
-                        if (!empty($dates_obj['counselling_date'])) {
-                            $next_date = $dates_obj['counselling_date'];
-                        } elseif (!empty($dates_obj['interview_date'])) {
-                            $next_date = $dates_obj['interview_date'];
-                        } elseif (!empty($dates_obj['next_date'])) {
-                            $next_date = $dates_obj['next_date'];
+                            // Check for counselling or similar next dates
+                            if (!empty($dates_obj['counselling_date'])) {
+                                $next_date = $dates_obj['counselling_date'];
+                            } elseif (!empty($dates_obj['interview_date'])) {
+                                $next_date = $dates_obj['interview_date'];
+                            } elseif (!empty($dates_obj['next_date'])) {
+                                $next_date = $dates_obj['next_date'];
+                            }
                         }
+                    } elseif (is_string($dates_obj) && !empty($dates_obj)) {
+                        // Fallback format - dates is a string
+                        $start_date = $dates_obj;
                     }
-                } elseif (is_string($dates_obj) && !empty($dates_obj)) {
-                    // Fallback format - dates is a string
-                    $start_date = $dates_obj;
-                }
 
-                $category = get_the_category();
-                $category_name = !empty($category) ? $category[0]->name : 'Uncategorized';
-            ?>
-                <div class="table-row">
-                    <div class="td-cell td-image" data-label="Image">
-                        <div class="post-thumbnail">
-                            <?php if (has_post_thumbnail()) : ?>
-                                <img src="<?php echo get_the_post_thumbnail_url(get_the_ID(), 'thumbnail'); ?>" alt="<?php the_title(); ?>">
-                            <?php else : ?>
-                                <div class="thumbnail-placeholder">
-                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-                                        <circle cx="8.5" cy="8.5" r="1.5"></circle>
-                                        <polyline points="21 15 16 10 5 21"></polyline>
-                                    </svg>
-                                </div>
-                            <?php endif; ?>
+                    $category = get_the_category();
+                    $category_name = !empty($category) ? $category[0]->name : 'Uncategorized';
+                ?>
+                    <div class="table-row">
+                        <div class="td-cell td-image" data-label="Image">
+                            <div class="post-thumbnail">
+                                <?php if (has_post_thumbnail()) : ?>
+                                    <img src="<?php echo get_the_post_thumbnail_url(get_the_ID(), 'thumbnail'); ?>" alt="<?php the_title(); ?>">
+                                <?php else : ?>
+                                    <div class="thumbnail-placeholder">
+                                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                                            <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                                            <polyline points="21 15 16 10 5 21"></polyline>
+                                        </svg>
+                                    </div>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+
+                        <div class="td-cell td-title" data-label="Title">
+                            <a href="<?php echo esc_url(get_permalink($post_id)); ?>" class="post-title-link">
+                                <?php the_title(); ?>
+                            </a>
+                        </div>
+
+                        <div class="td-cell td-organization" data-label="Organization">
+                            <?php echo esc_html($organization); ?>
+                        </div>
+
+                        <div class="td-cell td-category" data-label="Category">
+                            <span class="category-badge"><?php echo esc_html($category_name); ?></span>
+                        </div>
+
+                        <?php if ($category_slug === 'admit-card'): ?>
+                            <div class="td-cell td-date" data-label="Admit Card Date">
+                                <?php echo esc_html($admit_card_date); ?>
+                            </div>
+
+                            <div class="td-cell td-result" data-label="Result Date">
+                                <span class="date-highlight"><?php echo esc_html($result_date); ?></span>
+                            </div>
+                        <?php elseif ($category_slug === 'result'): ?>
+                            <div class="td-cell td-result" data-label="Result Date">
+                                <?php echo esc_html($result_date); ?>
+                            </div>
+
+                            <div class="td-cell td-next" data-label="Next Date">
+                                <span class="date-highlight"><?php echo esc_html($next_date); ?></span>
+                            </div>
+                        <?php else: ?>
+                            <div class="td-cell td-start" data-label="Start Date">
+                                <?php echo esc_html($start_date); ?>
+                            </div>
+
+                            <div class="td-cell td-last" data-label="Last Date">
+                                <span class="date-highlight"><?php echo esc_html($last_date); ?></span>
+                            </div>
+                        <?php endif; ?>
+
+                        <div class="td-cell td-action" data-label="Action">
+                            <a href="<?php echo esc_url(get_permalink($post_id)); ?>" class="btn-view">
+                                View Details
+                            </a>
                         </div>
                     </div>
-
-                    <div class="td-cell td-title" data-label="Title">
-                        <a href="<?php echo esc_url(get_permalink($post_id)); ?>" class="post-title-link">
-                            <?php the_title(); ?>
-                        </a>
-                    </div>
-
-                    <div class="td-cell td-organization" data-label="Organization">
-                        <?php echo esc_html($organization); ?>
-                    </div>
-
-                    <div class="td-cell td-category" data-label="Category">
-                        <span class="category-badge"><?php echo esc_html($category_name); ?></span>
-                    </div>
-
-                    <?php if ($category_slug === 'admit-card'): ?>
-                        <div class="td-cell td-date" data-label="Admit Card Date">
-                            <?php echo esc_html($admit_card_date); ?>
-                        </div>
-
-                        <div class="td-cell td-result" data-label="Result Date">
-                            <span class="date-highlight"><?php echo esc_html($result_date); ?></span>
-                        </div>
-                    <?php elseif ($category_slug === 'result'): ?>
-                        <div class="td-cell td-result" data-label="Result Date">
-                            <?php echo esc_html($result_date); ?>
-                        </div>
-
-                        <div class="td-cell td-next" data-label="Next Date">
-                            <span class="date-highlight"><?php echo esc_html($next_date); ?></span>
-                        </div>
-                    <?php else: ?>
-                        <div class="td-cell td-start" data-label="Start Date">
-                            <?php echo esc_html($start_date); ?>
-                        </div>
-
-                        <div class="td-cell td-last" data-label="Last Date">
-                            <span class="date-highlight"><?php echo esc_html($last_date); ?></span>
-                        </div>
-                    <?php endif; ?>
-
-                    <div class="td-cell td-action" data-label="Action">
-                        <a href="<?php echo esc_url(get_permalink($post_id)); ?>" class="btn-view">
-                            View Details
-                        </a>
-                    </div>
-                </div>
-            <?php endwhile; ?>
+                <?php endwhile; ?>
+            </div>
         </div>
     </div>
 
