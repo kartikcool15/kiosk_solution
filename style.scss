@@ -269,6 +269,73 @@ footer {
 	transition: color 0.3s;
 }
 
+/* Organization Dropdown */
+.sidebar-dropdown-section {
+	padding: 1rem;
+	border-top: 1px solid $border-color;
+	border-bottom: 1px solid $border-color;
+	margin: 0.5rem 0;
+}
+
+.sidebar-dropdown-label {
+	display: flex;
+	align-items: center;
+	gap: 0.75rem;
+	margin-bottom: 0.75rem;
+	color: $text-white;
+	font-size: 0.875rem;
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: 0.5px;
+
+	.sidebar-icon {
+		color: $primary-color;
+	}
+}
+
+.sidebar-dropdown-select {
+	width: 100%;
+	padding: 0.625rem 0.875rem;
+	background-color: $sidebar-item-hover;
+	border: 1px solid $border-color;
+	border-radius: 8px;
+	color: $text-white;
+	font-size: 0.875rem;
+	font-weight: 500;
+	cursor: pointer;
+	transition: all 0.3s ease;
+	appearance: none;
+	background-image: url('data:image/svg+xml;charset=UTF-8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="%2394a3b8" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>');
+	background-repeat: no-repeat;
+	background-position: right 0.75rem center;
+	background-size: 16px;
+	padding-right: 2.5rem;
+
+	&:focus {
+		outline: none;
+		border-color: $primary-color;
+		background-color: $sidebar-bg;
+		box-shadow: 0 0 0 3px rgba(99, 71, 234, 0.1);
+	}
+
+	&:hover {
+		border-color: rgba(99, 71, 234, 0.5);
+		background-color: $sidebar-bg;
+	}
+
+	option {
+		background-color: $sidebar-bg;
+		color: $text-white;
+		padding: 0.5rem;
+
+		&:checked,
+		&:hover {
+			background-color: $primary-color;
+			color: $text-white;
+		}
+	}
+}
+
 /* Responsive */
 @media (max-width: 768px) {
 	.content-wrapper {

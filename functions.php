@@ -28,6 +28,11 @@ function kiosk_enqueue_styles() {
 }
 add_action('wp_enqueue_scripts', 'kiosk_enqueue_styles');
 
+function kiosk_enqueue_scripts() {
+    wp_enqueue_script('kiosk-main', get_template_directory_uri() . '/assets/main.js', array('jquery'), '1.0.0', true);
+}
+add_action('wp_enqueue_scripts', 'kiosk_enqueue_scripts');
+
 // Include content automation functionality
 require_once get_template_directory() . '/module/content-automation/content-automation.php';
 require_once get_template_directory() . '/module/admin/admin-settings.php';

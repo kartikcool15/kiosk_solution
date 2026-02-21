@@ -91,6 +91,40 @@
             </li>
 
         </ul>
+
+        <!-- Organization Taxonomy Dropdown -->
+        <div class="sidebar-dropdown-section">
+            <label class="sidebar-dropdown-label">
+                <svg class="sidebar-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                    <rect x="9" y="9" width="6" height="7"></rect>
+                </svg>
+                <span>Select Organization</span>
+            </label>
+            <select class="sidebar-dropdown-select" id="organization-dropdown">
+                <option value="">-- Choose Organization --</option>
+                <?php
+                $organizations = get_terms(array(
+                    'taxonomy' => 'organization',
+                    'hide_empty' => true,
+                    'orderby' => 'name',
+                    'order' => 'ASC'
+                ));
+                
+                if (!empty($organizations) && !is_wp_error($organizations)) :
+                    foreach ($organizations as $org) :
+                        $term_link = get_term_link($org);
+                        $selected = (is_tax('organization', $org->slug)) ? 'selected' : '';
+                        ?>
+                        <option value="<?php echo esc_url($term_link); ?>" <?php echo $selected; ?>>
+                            <?php echo esc_html($org->name); ?> (<?php echo $org->count; ?>)
+                        </option>
+                    <?php endforeach;
+                endif;
+                ?>
+            </select>
+        </div>
+
         <ul class="sidebar-menu">
             <li class="sidebar-item <?php echo (is_page('search-pincode') || is_page_template('pincode-search.php')) ? 'active' : ''; ?>">
                 <a href="<?php echo esc_url(home_url('/search-pincode/')); ?>" class="sidebar-link">
