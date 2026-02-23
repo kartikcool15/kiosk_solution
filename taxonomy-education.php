@@ -44,6 +44,12 @@ if ($all_posts_query->have_posts()) :
         $dates = kiosk_get_post_dates($post_id);
         $start_date = $dates['start_date'];
         $last_date = $dates['last_date'];
+        $exam_date = $dates['exam_date'];
+        $admit_card_date = $dates['admit_card_date'];
+        $result_date = $dates['result_date'];
+        $counselling_date = $dates['counselling_date'];
+        $interview_date = $dates['interview_date'];
+        $next_date = $dates['next_date'];
 
         $category = get_the_category();
         $category_name = !empty($category) ? $category[0]->name : 'Uncategorized';

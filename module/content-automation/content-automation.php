@@ -29,6 +29,10 @@ class Kiosk_Content_Automation
         // Enable custom fields meta box
         add_action('init', array($this, 'enable_custom_fields_metabox'));
 
+        // Add custom metabox for date fields
+        add_action('add_meta_boxes', array($this, 'add_dates_metabox'));
+        add_action('save_post', array($this, 'save_dates_metabox'));
+
         // Setup cron schedule
         add_filter('cron_schedules', array($this, 'custom_cron_schedules'));
 
@@ -161,6 +165,136 @@ class Kiosk_Content_Automation
 
         // Prevent ACF from hiding the default custom fields meta box
         add_filter('acf/settings/remove_wp_meta_box', '__return_false');
+    }
+
+    /**
+     * Add custom metabox for date fields
+     */
+    public function add_dates_metabox()
+    {
+        add_meta_box(
+            'kiosk_dates_metabox',
+            'Important Dates',
+            array($this, 'render_dates_metabox'),
+            'post',
+            'side',
+            'high'
+        );
+    }
+
+    /**
+     * Render the dates metabox
+     */
+    public function render_dates_metabox($post)
+    {
+        // Add nonce for security
+        wp_nonce_field('kiosk_dates_metabox_nonce', 'kiosk_dates_metabox_nonce_field');
+
+        // Get current values
+        $start_date = get_post_meta($post->ID, 'kiosk_start_date', true);
+        $last_date = get_post_meta($post->ID, 'kiosk_last_date', true);
+        $exam_date = get_post_meta($post->ID, 'kiosk_exam_date', true);
+        $admit_card_date = get_post_meta($post->ID, 'kiosk_admit_card_date', true);
+        $result_date = get_post_meta($post->ID, 'kiosk_result_date', true);
+        $counselling_date = get_post_meta($post->ID, 'kiosk_counselling_date', true);
+        $interview_date = get_post_meta($post->ID, 'kiosk_interview_date', true);
+
+        // Display date fields
+        ?>
+        <style>
+            .kiosk-date-field {
+                margin-bottom: 15px;
+            }
+            .kiosk-date-field label {
+                display: block;
+                font-weight: 600;
+                margin-bottom: 5px;
+                font-size: 12px;
+            }
+            .kiosk-date-field input[type="date"] {
+                width: 100%;
+                padding: 5px;
+                border: 1px solid #ddd;
+                border-radius: 3px;
+            }
+        </style>
+        
+        <div class="kiosk-date-field">
+            <label for="kiosk_start_date">Start Date (Application Start)</label>
+            <input type="date" id="kiosk_start_date" name="kiosk_start_date" value="<?php echo esc_attr($start_date); ?>" />
+        </div>
+
+        <div class="kiosk-date-field">
+            <label for="kiosk_last_date">Last Date (Application End)</label>
+            <input type="date" id="kiosk_last_date" name="kiosk_last_date" value="<?php echo esc_attr($last_date); ?>" />
+        </div>
+
+        <div class="kiosk-date-field">
+            <label for="kiosk_exam_date">Exam Date</label>
+            <input type="date" id="kiosk_exam_date" name="kiosk_exam_date" value="<?php echo esc_attr($exam_date); ?>" />
+        </div>
+
+        <div class="kiosk-date-field">
+            <label for="kiosk_admit_card_date">Admit Card Date</label>
+            <input type="date" id="kiosk_admit_card_date" name="kiosk_admit_card_date" value="<?php echo esc_attr($admit_card_date); ?>" />
+        </div>
+
+        <div class="kiosk-date-field">
+            <label for="kiosk_result_date">Result Date</label>
+            <input type="date" id="kiosk_result_date" name="kiosk_result_date" value="<?php echo esc_attr($result_date); ?>" />
+        </div>
+
+        <div class="kiosk-date-field">
+            <label for="kiosk_counselling_date">Counselling Date</label>
+            <input type="date" id="kiosk_counselling_date" name="kiosk_counselling_date" value="<?php echo esc_attr($counselling_date); ?>" />
+        </div>
+
+        <div class="kiosk-date-field">
+            <label for="kiosk_interview_date">Interview Date</label>
+            <input type="date" id="kiosk_interview_date" name="kiosk_interview_date" value="<?php echo esc_attr($interview_date); ?>" />
+        </div>
+        <?php
+    }
+
+    /**
+     * Save the dates metabox data
+     */
+    public function save_dates_metabox($post_id)
+    {
+        // Check nonce
+        if (!isset($_POST['kiosk_dates_metabox_nonce_field']) || 
+            !wp_verify_nonce($_POST['kiosk_dates_metabox_nonce_field'], 'kiosk_dates_metabox_nonce')) {
+            return;
+        }
+
+        // Check autosave
+        if (defined('DOING_AUTOSAVE') && DOING_AUTOSAVE) {
+            return;
+        }
+
+        // Check permissions
+        if (!current_user_can('edit_post', $post_id)) {
+            return;
+        }
+
+        // Save date fields
+        $date_fields = array(
+            'kiosk_start_date',
+            'kiosk_last_date',
+            'kiosk_exam_date',
+            'kiosk_admit_card_date',
+            'kiosk_result_date',
+            'kiosk_counselling_date',
+            'kiosk_interview_date'
+        );
+
+        foreach ($date_fields as $field) {
+            if (isset($_POST[$field])) {
+                update_post_meta($post_id, $field, sanitize_text_field($_POST[$field]));
+            } else {
+                delete_post_meta($post_id, $field);
+            }
+        }
     }
 
     /**
