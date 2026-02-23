@@ -33,7 +33,6 @@ if ($all_posts_query->have_posts()) :
         $dates = kiosk_get_post_dates($post_id);
         $admit_card_date = $dates['admit_card_date'];
         $exam_date = $dates['exam_date'];
-        $result_date = $dates['result_date'];
 
         // Get timestamp for sorting
         $admit_card_timestamp = ($admit_card_date !== 'N/A') ? strtotime($admit_card_date) : 0;
@@ -43,9 +42,14 @@ if ($all_posts_query->have_posts()) :
         // Calculate Active Status
         $active_status = '';
         $status_class = '';
-        $status_priority = 4; // Default priority (no status)
+        $status_priority = 5; // Default priority (no status)
         
-        if ($exam_timestamp && ($exam_timestamp - $current_time) <= 7 * 24 * 60 * 60 && $exam_timestamp >= $current_time) {
+        if ($exam_timestamp && $exam_timestamp < $current_time) {
+            // Exam date has passed
+            $active_status = 'Exam Completed';
+            $status_class = 'status-completed';
+            $status_priority = 4; // Low priority (historical)
+        } elseif ($exam_timestamp && ($exam_timestamp - $current_time) <= 7 * 24 * 60 * 60 && $exam_timestamp >= $current_time) {
             // Exam date is within 7 days from now
             $active_status = 'Exam Soon';
             $status_class = 'status-ending';
@@ -69,7 +73,6 @@ if ($all_posts_query->have_posts()) :
             'organization' => $organization,
             'admit_card_date' => $admit_card_date,
             'exam_date' => $exam_date,
-            'result_date' => $result_date,
             'active_status' => $active_status,
             'status_class' => $status_class,
             'status_priority' => $status_priority,
@@ -118,7 +121,6 @@ if ($all_posts_query->have_posts()) :
                     <div class="th-cell th-organization">Organization</div>
                     <div class="th-cell th-date">Admit Card Date</div>
                     <div class="th-cell th-exam">Exam Date</div>
-                    <div class="th-cell th-result">Result Date</div>
                     <div class="th-cell th-status">Active Status</div>
                     <div class="th-cell th-action">Action</div>
                 </div>
@@ -130,7 +132,6 @@ if ($all_posts_query->have_posts()) :
                     $organization = $post_item['organization'];
                     $admit_card_date = $post_item['admit_card_date'];
                     $exam_date = $post_item['exam_date'];
-                    $result_date = $post_item['result_date'];
                     $active_status = $post_item['active_status'];
                     $status_class = $post_item['status_class'];
                 ?>
@@ -150,11 +151,7 @@ if ($all_posts_query->have_posts()) :
                         </div>
 
                         <div class="td-cell td-exam" data-label="Exam Date">
-                            <span class="date-highlight"><?php echo esc_html($exam_date); ?></span>
-                        </div>
-
-                        <div class="td-cell td-result" data-label="Result Date">
-                            <?php echo esc_html($result_date); ?>
+                            <?php echo esc_html($exam_date); ?>
                         </div>
 
                         <div class="td-cell td-status" data-label="Active Status">

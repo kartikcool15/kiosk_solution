@@ -1070,6 +1070,12 @@ select {
 	border: 1px solid rgba(244, 67, 54, 0.3);
 }
 
+.status-completed {
+	background-color: rgba(148, 163, 184, 0.2);
+	color: #94a3b8;
+	border: 1px solid rgba(148, 163, 184, 0.3);
+}
+
 .btn-view {
 	display: inline-flex;
 	align-items: center;
