@@ -40,7 +40,10 @@ get_header(); ?>
                 </div>
 
                 <!-- Table Body -->
-                <?php while (have_posts()) : the_post();
+                <?php 
+                // Collect all posts with their data for sorting
+                $posts_data = array();
+                while (have_posts()) : the_post();
                     // Get the JSON data
                     $post_id = get_the_ID();
                     $json_data = get_post_meta($post_id, 'kiosk_chatgpt_json', true);
@@ -102,6 +105,8 @@ get_header(); ?>
                     // Calculate Active Status for jobs
                     $active_status = '';
                     $status_class = '';
+                    $status_priority = 4; // Default priority (no status)
+                    
                     if ($category_slug !== 'admit-card' && $category_slug !== 'result') {
                         $current_time = current_time('timestamp');
                         $start_timestamp = ($start_date !== 'N/A') ? strtotime($start_date) : false;
@@ -111,16 +116,55 @@ get_header(); ?>
                             // Start date is in the future
                             $active_status = 'Upcoming';
                             $status_class = 'status-upcoming';
+                            $status_priority = 2;
                         } elseif ($start_timestamp && ($current_time - $start_timestamp) <= 7 * 24 * 60 * 60) {
                             // Start date is within the past week
                             $active_status = 'New';
                             $status_class = 'status-new';
+                            $status_priority = 3;
                         } elseif ($last_timestamp && ($last_timestamp - $current_time) <= 7 * 24 * 60 * 60 && $last_timestamp >= $current_time) {
                             // Last date is within 1 week from now
                             $active_status = 'Ending Soon';
                             $status_class = 'status-ending';
+                            $status_priority = 1; // Highest priority
                         }
                     }
+                    
+                    // Store post data
+                    $posts_data[] = array(
+                        'post_id' => $post_id,
+                        'post_title' => $post_title,
+                        'organization' => $organization,
+                        'start_date' => $start_date,
+                        'last_date' => $last_date,
+                        'admit_card_date' => $admit_card_date,
+                        'result_date' => $result_date,
+                        'next_date' => $next_date,
+                        'category_name' => $category_name,
+                        'active_status' => $active_status,
+                        'status_class' => $status_class,
+                        'status_priority' => $status_priority
+                    );
+                endwhile;
+                
+                // Sort posts by status priority (Ending Soon first, then Upcoming, then New)
+                usort($posts_data, function($a, $b) {
+                    return $a['status_priority'] - $b['status_priority'];
+                });
+                
+                // Display sorted posts
+                foreach ($posts_data as $post_item) :
+                    $post_id = $post_item['post_id'];
+                    $post_title = $post_item['post_title'];
+                    $organization = $post_item['organization'];
+                    $start_date = $post_item['start_date'];
+                    $last_date = $post_item['last_date'];
+                    $admit_card_date = $post_item['admit_card_date'];
+                    $result_date = $post_item['result_date'];
+                    $next_date = $post_item['next_date'];
+                    $category_name = $post_item['category_name'];
+                    $active_status = $post_item['active_status'];
+                    $status_class = $post_item['status_class'];
                 ?>
                     <div class="table-row">
 
@@ -174,7 +218,7 @@ get_header(); ?>
                             </a>
                         </div>
                     </div>
-                <?php endwhile; ?>
+                <?php endforeach; ?>
             </div>
         </div>
     </div>
