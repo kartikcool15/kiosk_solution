@@ -175,6 +175,186 @@ function kiosk_process_existing_education_taxonomy() {
 }
 add_action('init', 'kiosk_process_existing_education_taxonomy');
 
+/**
+ * Get post dates with priority to custom fields over JSON
+ * This allows manual edits to custom fields to override ChatGPT JSON values
+ */
+function kiosk_get_post_dates($post_id) {
+    $dates = array(
+        'start_date' => 'N/A',
+        'last_date' => 'N/A',
+        'exam_date' => 'N/A',
+        'admit_card_date' => 'N/A',
+        'result_date' => 'N/A',
+        'counselling_date' => 'N/A',
+        'interview_date' => 'N/A',
+        'next_date' => 'N/A'
+    );
+
+    // First, try to get from custom fields (these have priority)
+    $start_date = get_post_meta($post_id, 'kiosk_start_date', true);
+    $last_date = get_post_meta($post_id, 'kiosk_last_date', true);
+    $exam_date = get_post_meta($post_id, 'kiosk_exam_date', true);
+    $admit_card_date = get_post_meta($post_id, 'kiosk_admit_card_date', true);
+    $result_date = get_post_meta($post_id, 'kiosk_result_date', true);
+    $counselling_date = get_post_meta($post_id, 'kiosk_counselling_date', true);
+    $interview_date = get_post_meta($post_id, 'kiosk_interview_date', true);
+
+    // If custom fields exist, use them
+    if ($start_date) $dates['start_date'] = $start_date;
+    if ($last_date) $dates['last_date'] = $last_date;
+    if ($exam_date) $dates['exam_date'] = $exam_date;
+    if ($admit_card_date) $dates['admit_card_date'] = $admit_card_date;
+    if ($result_date) $dates['result_date'] = $result_date;
+    if ($counselling_date) $dates['counselling_date'] = $counselling_date;
+    if ($interview_date) $dates['interview_date'] = $interview_date;
+
+    // Fallback to ChatGPT JSON if custom fields are empty
+    if ($dates['start_date'] === 'N/A' || $dates['last_date'] === 'N/A') {
+        $json_data = get_post_meta($post_id, 'kiosk_chatgpt_json', true);
+        if (!empty($json_data)) {
+            $data = json_decode($json_data, true);
+            if (is_array($data) && !empty($data['dates'])) {
+                $json_dates = $data['dates'];
+                
+                // Use JSON dates only if custom fields are not set
+                if ($dates['start_date'] === 'N/A' && !empty($json_dates['start_date'])) {
+                    $dates['start_date'] = $json_dates['start_date'];
+                }
+                if ($dates['last_date'] === 'N/A' && !empty($json_dates['last_date'])) {
+                    $dates['last_date'] = $json_dates['last_date'];
+                }
+                if ($dates['exam_date'] === 'N/A' && !empty($json_dates['exam_date'])) {
+                    $dates['exam_date'] = $json_dates['exam_date'];
+                }
+                if ($dates['admit_card_date'] === 'N/A' && !empty($json_dates['admit_card_date'])) {
+                    $dates['admit_card_date'] = $json_dates['admit_card_date'];
+                }
+                if ($dates['result_date'] === 'N/A' && !empty($json_dates['result_date'])) {
+                    $dates['result_date'] = $json_dates['result_date'];
+                }
+                if ($dates['counselling_date'] === 'N/A' && !empty($json_dates['counselling_date'])) {
+                    $dates['counselling_date'] = $json_dates['counselling_date'];
+                }
+                if ($dates['interview_date'] === 'N/A' && !empty($json_dates['interview_date'])) {
+                    $dates['interview_date'] = $json_dates['interview_date'];
+                }
+            }
+        }
+    }
+
+    // Set next_date based on priority
+    if ($dates['counselling_date'] !== 'N/A') {
+        $dates['next_date'] = $dates['counselling_date'];
+    } elseif ($dates['interview_date'] !== 'N/A') {
+        $dates['next_date'] = $dates['interview_date'];
+    }
+
+    return $dates;
+}
+
+/**
+ * Bulk sync dates from ChatGPT JSON to custom fields for all existing posts
+ * Run this once via URL: yoursite.com/?sync_dates_to_custom_fields=1
+ */
+function kiosk_bulk_sync_dates_to_custom_fields() {
+    if (!isset($_GET['sync_dates_to_custom_fields']) || !current_user_can('manage_options')) {
+        return;
+    }
+    
+    // Get all posts
+    $args = array(
+        'post_type' => 'post',
+        'posts_per_page' => -1,
+        'post_status' => 'publish',
+        'fields' => 'ids',
+    );
+    
+    $post_ids = get_posts($args);
+    
+    $processed = 0;
+    $updated = 0;
+    $skipped = 0;
+    
+    foreach ($post_ids as $post_id) {
+        $processed++;
+        
+        // Get ChatGPT JSON
+        $chatgpt_json = get_post_meta($post_id, 'kiosk_chatgpt_json', true);
+        
+        if (empty($chatgpt_json)) {
+            $skipped++;
+            continue;
+        }
+        
+        $chatgpt_data = json_decode($chatgpt_json, true);
+        
+        if (!is_array($chatgpt_data) || empty($chatgpt_data['dates'])) {
+            $skipped++;
+            continue;
+        }
+        
+        $dates = $chatgpt_data['dates'];
+        $fields_updated = 0;
+        
+        // Sync each date field
+        if (!empty($dates['start_date'])) {
+            update_post_meta($post_id, 'kiosk_start_date', sanitize_text_field($dates['start_date']));
+            $fields_updated++;
+        }
+        
+        if (!empty($dates['last_date'])) {
+            update_post_meta($post_id, 'kiosk_last_date', sanitize_text_field($dates['last_date']));
+            $fields_updated++;
+        }
+        
+        if (!empty($dates['exam_date'])) {
+            update_post_meta($post_id, 'kiosk_exam_date', sanitize_text_field($dates['exam_date']));
+            $fields_updated++;
+        }
+        
+        if (!empty($dates['admit_card_date'])) {
+            update_post_meta($post_id, 'kiosk_admit_card_date', sanitize_text_field($dates['admit_card_date']));
+            $fields_updated++;
+        }
+        
+        if (!empty($dates['result_date'])) {
+            update_post_meta($post_id, 'kiosk_result_date', sanitize_text_field($dates['result_date']));
+            $fields_updated++;
+        }
+        
+        if (!empty($dates['counselling_date'])) {
+            update_post_meta($post_id, 'kiosk_counselling_date', sanitize_text_field($dates['counselling_date']));
+            $fields_updated++;
+        }
+        
+        if (!empty($dates['interview_date'])) {
+            update_post_meta($post_id, 'kiosk_interview_date', sanitize_text_field($dates['interview_date']));
+            $fields_updated++;
+        }
+        
+        if ($fields_updated > 0) {
+            $updated++;
+        }
+    }
+    
+    // Display results
+    wp_die(
+        sprintf(
+            '<h1>Date Custom Fields Sync Complete</h1>
+            <p><strong>Total Posts Processed:</strong> %d</p>
+            <p><strong>Posts Updated:</strong> %d</p>
+            <p><strong>Posts Skipped:</strong> %d</p>
+            <p><a href="%s">Dashboard</a></p>',
+            $processed,
+            $updated,
+            $skipped,
+            admin_url()
+        )
+    );
+}
+add_action('init', 'kiosk_bulk_sync_dates_to_custom_fields');
+
 // Include content automation functionality
 require_once get_template_directory() . '/module/content-automation/content-automation.php';
 require_once get_template_directory() . '/module/admin/admin-settings.php';

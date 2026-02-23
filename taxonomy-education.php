@@ -33,60 +33,17 @@ if ($all_posts_query->have_posts()) :
     // Collect all posts with their data for sorting
     $posts_data = array();
     while ($all_posts_query->have_posts()) : $all_posts_query->the_post();
-        // Get the JSON data
+        // Get post data
         $post_id = get_the_ID();
         $json_data = get_post_meta($post_id, 'kiosk_chatgpt_json', true);
         $data = json_decode($json_data, true);
         $post_title = !empty($data['post_title']) ? $data['post_title'] : get_the_title($post_id);
-
         $organization = !empty($data['organization']) ? $data['organization'] : 'N/A';
 
-        // Handle dates - could be object from ChatGPT or array of objects or string from fallback
-        $dates_obj = isset($data['dates']) ? $data['dates'] : array();
-        $start_date = 'N/A';
-        $last_date = 'N/A';
-        $admit_card_date = 'N/A';
-        $result_date = 'N/A';
-        $next_date = 'N/A';
-
-        if (is_array($dates_obj) && !empty($dates_obj)) {
-            // Check if it's an array of date objects with 'event' and 'date' keys
-            if (isset($dates_obj[0]) && is_array($dates_obj[0]) && isset($dates_obj[0]['event'])) {
-                foreach ($dates_obj as $date_item) {
-                    $event_lower = strtolower($date_item['event']);
-                    if ((strpos($event_lower, 'start') !== false || strpos($event_lower, 'begin') !== false) && $start_date === 'N/A') {
-                        $start_date = $date_item['date'];
-                    } elseif ((strpos($event_lower, 'last') !== false || strpos($event_lower, 'end') !== false || strpos($event_lower, 'closing') !== false) && $last_date === 'N/A') {
-                        $last_date = $date_item['date'];
-                    } elseif ((strpos($event_lower, 'admit') !== false || strpos($event_lower, 'hall ticket') !== false) && $admit_card_date === 'N/A') {
-                        $admit_card_date = $date_item['date'];
-                    } elseif ((strpos($event_lower, 'result') !== false || strpos($event_lower, 'declaration') !== false) && $result_date === 'N/A') {
-                        $result_date = $date_item['date'];
-                    } elseif ((strpos($event_lower, 'counsel') !== false || strpos($event_lower, 'interview') !== false || strpos($event_lower, 'next') !== false) && $next_date === 'N/A') {
-                        $next_date = $date_item['date'];
-                    }
-                }
-            }
-            // Or ChatGPT format - dates as associative array
-            elseif (isset($dates_obj['start_date']) || isset($dates_obj['last_date']) || isset($dates_obj['admit_card_date']) || isset($dates_obj['result_date'])) {
-                $start_date = !empty($dates_obj['start_date']) ? $dates_obj['start_date'] : 'N/A';
-                $last_date = !empty($dates_obj['last_date']) ? $dates_obj['last_date'] : 'N/A';
-                $admit_card_date = !empty($dates_obj['admit_card_date']) ? $dates_obj['admit_card_date'] : 'N/A';
-                $result_date = !empty($dates_obj['result_date']) ? $dates_obj['result_date'] : 'N/A';
-
-                // Check for counselling or similar next dates
-                if (!empty($dates_obj['counselling_date'])) {
-                    $next_date = $dates_obj['counselling_date'];
-                } elseif (!empty($dates_obj['interview_date'])) {
-                    $next_date = $dates_obj['interview_date'];
-                } elseif (!empty($dates_obj['next_date'])) {
-                    $next_date = $dates_obj['next_date'];
-                }
-            }
-        } elseif (is_string($dates_obj) && !empty($dates_obj)) {
-            // Fallback format - dates is a string
-            $start_date = $dates_obj;
-        }
+        // Get dates - prioritize custom fields over JSON
+        $dates = kiosk_get_post_dates($post_id);
+        $start_date = $dates['start_date'];
+        $last_date = $dates['last_date'];
 
         $category = get_the_category();
         $category_name = !empty($category) ? $category[0]->name : 'Uncategorized';

@@ -59,6 +59,9 @@ class Kiosk_Content_Automation
         add_filter('bulk_actions-edit-post', array($this, 'add_bulk_update_action'));
         add_filter('handle_bulk_actions-edit-post', array($this, 'handle_bulk_update_action'), 10, 3);
         add_action('admin_notices', array($this, 'bulk_update_admin_notice'));
+
+        // Date field sync: when custom date fields are updated, sync back to JSON
+        add_action('updated_post_meta', array($this, 'sync_date_field_to_json'), 10, 4);
     }
 
     /**
@@ -94,6 +97,56 @@ class Kiosk_Content_Automation
         register_post_meta('post', 'kiosk_processing_status', array(
             'type' => 'string',
             'description' => 'ChatGPT Processing Status (pending, processing, completed, failed)',
+            'single' => true,
+            'show_in_rest' => true,
+        ));
+
+        // Date Custom Fields for easier sorting and querying
+        register_post_meta('post', 'kiosk_start_date', array(
+            'type' => 'string',
+            'description' => 'Start Date (Application Start Date)',
+            'single' => true,
+            'show_in_rest' => true,
+        ));
+
+        register_post_meta('post', 'kiosk_last_date', array(
+            'type' => 'string',
+            'description' => 'Last Date (Application End Date)',
+            'single' => true,
+            'show_in_rest' => true,
+        ));
+
+        register_post_meta('post', 'kiosk_exam_date', array(
+            'type' => 'string',
+            'description' => 'Exam Date',
+            'single' => true,
+            'show_in_rest' => true,
+        ));
+
+        register_post_meta('post', 'kiosk_admit_card_date', array(
+            'type' => 'string',
+            'description' => 'Admit Card Release Date',
+            'single' => true,
+            'show_in_rest' => true,
+        ));
+
+        register_post_meta('post', 'kiosk_result_date', array(
+            'type' => 'string',
+            'description' => 'Result Date',
+            'single' => true,
+            'show_in_rest' => true,
+        ));
+
+        register_post_meta('post', 'kiosk_counselling_date', array(
+            'type' => 'string',
+            'description' => 'Counselling Date',
+            'single' => true,
+            'show_in_rest' => true,
+        ));
+
+        register_post_meta('post', 'kiosk_interview_date', array(
+            'type' => 'string',
+            'description' => 'Interview Date',
             'single' => true,
             'show_in_rest' => true,
         ));
@@ -1104,6 +1157,140 @@ class Kiosk_Content_Automation
     }
 
     /**
+     * Sync dates from ChatGPT JSON to custom fields
+     * Called when ChatGPT processes a post
+     */
+    private function sync_dates_from_json_to_fields($post_id, $chatgpt_json)
+    {
+        if (empty($chatgpt_json)) {
+            return false;
+        }
+
+        $chatgpt_data = json_decode($chatgpt_json, true);
+        if (!is_array($chatgpt_data) || empty($chatgpt_data['dates'])) {
+            return false;
+        }
+
+        $dates = $chatgpt_data['dates'];
+        
+        // Only update custom fields if they don't already have a value (prioritize manual edits)
+        if (!get_post_meta($post_id, 'kiosk_start_date', true) && !empty($dates['start_date'])) {
+            update_post_meta($post_id, 'kiosk_start_date', sanitize_text_field($dates['start_date']));
+        }
+
+        if (!get_post_meta($post_id, 'kiosk_last_date', true) && !empty($dates['last_date'])) {
+            update_post_meta($post_id, 'kiosk_last_date', sanitize_text_field($dates['last_date']));
+        }
+
+        if (!get_post_meta($post_id, 'kiosk_exam_date', true) && !empty($dates['exam_date'])) {
+            update_post_meta($post_id, 'kiosk_exam_date', sanitize_text_field($dates['exam_date']));
+        }
+
+        if (!get_post_meta($post_id, 'kiosk_admit_card_date', true) && !empty($dates['admit_card_date'])) {
+            update_post_meta($post_id, 'kiosk_admit_card_date', sanitize_text_field($dates['admit_card_date']));
+        }
+
+        if (!get_post_meta($post_id, 'kiosk_result_date', true) && !empty($dates['result_date'])) {
+            update_post_meta($post_id, 'kiosk_result_date', sanitize_text_field($dates['result_date']));
+        }
+
+        if (!get_post_meta($post_id, 'kiosk_counselling_date', true) && !empty($dates['counselling_date'])) {
+            update_post_meta($post_id, 'kiosk_counselling_date', sanitize_text_field($dates['counselling_date']));
+        }
+
+        if (!get_post_meta($post_id, 'kiosk_interview_date', true) && !empty($dates['interview_date'])) {
+            update_post_meta($post_id, 'kiosk_interview_date', sanitize_text_field($dates['interview_date']));
+        }
+
+        return true;
+    }
+
+    /**
+     * Sync dates from custom fields back to ChatGPT JSON
+     * Called when custom fields are manually edited
+     */
+    private function sync_dates_from_fields_to_json($post_id)
+    {
+        $chatgpt_json = get_post_meta($post_id, 'kiosk_chatgpt_json', true);
+        if (empty($chatgpt_json)) {
+            return false;
+        }
+
+        $chatgpt_data = json_decode($chatgpt_json, true);
+        if (!is_array($chatgpt_data)) {
+            return false;
+        }
+
+        // Initialize dates array if it doesn't exist
+        if (!isset($chatgpt_data['dates'])) {
+            $chatgpt_data['dates'] = array();
+        }
+
+        // Update JSON with custom field values (custom fields take priority)
+        $start_date = get_post_meta($post_id, 'kiosk_start_date', true);
+        if ($start_date) {
+            $chatgpt_data['dates']['start_date'] = $start_date;
+        }
+
+        $last_date = get_post_meta($post_id, 'kiosk_last_date', true);
+        if ($last_date) {
+            $chatgpt_data['dates']['last_date'] = $last_date;
+        }
+
+        $exam_date = get_post_meta($post_id, 'kiosk_exam_date', true);
+        if ($exam_date) {
+            $chatgpt_data['dates']['exam_date'] = $exam_date;
+        }
+
+        $admit_card_date = get_post_meta($post_id, 'kiosk_admit_card_date', true);
+        if ($admit_card_date) {
+            $chatgpt_data['dates']['admit_card_date'] = $admit_card_date;
+        }
+
+        $result_date = get_post_meta($post_id, 'kiosk_result_date', true);
+        if ($result_date) {
+            $chatgpt_data['dates']['result_date'] = $result_date;
+        }
+
+        $counselling_date = get_post_meta($post_id, 'kiosk_counselling_date', true);
+        if ($counselling_date) {
+            $chatgpt_data['dates']['counselling_date'] = $counselling_date;
+        }
+
+        $interview_date = get_post_meta($post_id, 'kiosk_interview_date', true);
+        if ($interview_date) {
+            $chatgpt_data['dates']['interview_date'] = $interview_date;
+        }
+
+        // Save updated JSON
+        $updated_json = wp_json_encode($chatgpt_data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        update_post_meta($post_id, 'kiosk_chatgpt_json', $updated_json);
+
+        return true;
+    }
+
+    /**
+     * Hook to sync when a date custom field is updated
+     */
+    public function sync_date_field_to_json($meta_id, $post_id, $meta_key, $meta_value)
+    {
+        // Only sync for date-related custom fields
+        $date_fields = array(
+            'kiosk_start_date',
+            'kiosk_last_date',
+            'kiosk_exam_date',
+            'kiosk_admit_card_date',
+            'kiosk_result_date',
+            'kiosk_counselling_date',
+            'kiosk_interview_date'
+        );
+
+        if (in_array($meta_key, $date_fields)) {
+            $this->sync_dates_from_fields_to_json($post_id);
+        }
+    }
+
+    /**
      * Check if post already exists (checks all post statuses)
      */
     private function post_exists_by_source_id($source_id)
@@ -1353,6 +1540,9 @@ class Kiosk_Content_Automation
 
                 // Set education taxonomy for latest-job category posts
                 $this->set_post_education($post_id, $chatgpt_result);
+
+                // Sync dates from ChatGPT JSON to custom fields
+                $this->sync_dates_from_json_to_fields($post_id, $chatgpt_result);
 
                 // Publish the post now that ChatGPT processing is complete
                 wp_publish_post($post_id);
