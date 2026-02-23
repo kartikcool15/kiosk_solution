@@ -41,12 +41,22 @@ if ($all_posts_query->have_posts()) :
         // Calculate Active Status for jobs
         $active_status = '';
         $status_class = '';
-        $status_priority = 4; // Default priority (no status)
+        $status_priority = 6; // Default priority (no status)
         $current_time = current_time('timestamp');
         $start_timestamp = ($start_date !== 'N/A') ? strtotime($start_date) : false;
         $last_timestamp = ($last_date !== 'N/A') ? strtotime($last_date) : false;
         
-        if ($start_timestamp && $start_timestamp > $current_time) {
+        if ($last_timestamp && $last_timestamp < $current_time) {
+            // Last date has passed
+            $active_status = 'Application Closed';
+            $status_class = 'status-completed';
+            $status_priority = 5; // Lowest priority
+        } elseif ($last_timestamp && ($last_timestamp - $current_time) <= 7 * 24 * 60 * 60 && $last_timestamp >= $current_time) {
+            // Last date is within 1 week from now
+            $active_status = 'Ending Soon';
+            $status_class = 'status-ending';
+            $status_priority = 1; // Highest priority
+        } elseif ($start_timestamp && $start_timestamp > $current_time) {
             // Start date is in the future
             $active_status = 'Upcoming';
             $status_class = 'status-upcoming';
@@ -56,11 +66,11 @@ if ($all_posts_query->have_posts()) :
             $active_status = 'New';
             $status_class = 'status-new';
             $status_priority = 3;
-        } elseif ($last_timestamp && ($last_timestamp - $current_time) <= 7 * 24 * 60 * 60 && $last_timestamp >= $current_time) {
-            // Last date is within 1 week from now
-            $active_status = 'Ending Soon';
-            $status_class = 'status-ending';
-            $status_priority = 1; // Highest priority
+        } elseif ($start_timestamp && $start_timestamp <= $current_time && $last_timestamp && $last_timestamp > $current_time) {
+            // Start date has passed and last date is still in future (Ongoing)
+            $active_status = 'Ongoing';
+            $status_class = 'status-ongoing';
+            $status_priority = 4;
         }
         
         // Store post data
