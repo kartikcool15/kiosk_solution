@@ -13,7 +13,7 @@ $category_slug = $current_category->slug;
 
 // Get current page number for pagination
 $paged = (get_query_var('paged')) ? get_query_var('paged') : 1;
-$posts_per_page = get_option('posts_per_page');
+$posts_per_page = 20; // Number of posts per page
 
 // Fetch ALL posts from this category (no pagination limit)
 $all_posts_query = new WP_Query(array(
