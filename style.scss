@@ -145,7 +145,7 @@ footer {
 		align-items: center;
 		justify-content: space-between;
 		background: #111111;
-		
+
 		.topbar-filters {
 			display: flex;
 			gap: 12px;
@@ -153,7 +153,7 @@ footer {
 			flex-wrap: wrap;
 			flex: 1;
 		}
-		
+
 		select {
 			padding: 0.25rem 1rem;
 			max-width: 400px;
@@ -471,7 +471,7 @@ select {
 	border-radius: 4px;
 
 	&:hover {
-		background: lighten($sidebar-item-hover, 10%);
+		background: #111111;
 	}
 }
 
