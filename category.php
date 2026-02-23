@@ -3,29 +3,44 @@
 /**
  * Category Archive Template
  * Displays posts in a responsive table layout
+ * For latest-job category, see category-latest-job.php
  */
 
 get_header(); ?>
-<?php 
-// Get current category
-$current_category = get_queried_object();
-$category_slug = $current_category->slug;
+<?php if (have_posts()) :
+    // Get current category
+    $current_category = get_queried_object();
+    $category_slug = $current_category->slug;
+?>
+    <header class="page-header">
+        <h1 class="page-title"><?php single_cat_title(); ?></h1>
+        <p class="page-description">
+            <?php echo $wp_query->found_posts; ?> notifications found
+        </p>
+    </header>
+    
+    <div class="main-content-wrapper">
+        <div class="posts-table-wrapper">
+            <div class="posts-table">
+                <!-- Table Header -->
+                <div class="table-header">
+                    <div class="th-cell th-title">Title</div>
+                    <div class="th-cell th-organization">Organization</div>
+                    <?php if ($category_slug === 'admit-card'): ?>
+                        <div class="th-cell th-date">Admit Card Date</div>
+                        <div class="th-cell th-result">Result Date</div>
+                    <?php elseif ($category_slug === 'result'): ?>
+                        <div class="th-cell th-result">Result Date</div>
+                        <div class="th-cell th-next">Next Date</div>
+                    <?php else: ?>
+                        <div class="th-cell th-start">Start Date</div>
+                        <div class="th-cell th-last">Last Date</div>
+                    <?php endif; ?>
+                    <div class="th-cell th-action">Action</div>
+                </div>
 
-// Get current page number for pagination
-$paged = (get_query_var('paged')) ? get_query_var('paged') : 1;
-$posts_per_page = 20; // Number of posts per page
-
-// Fetch ALL posts from this category (no pagination limit)
-$all_posts_query = new WP_Query(array(
-    'cat' => $current_category->term_id,
-    'posts_per_page' => -1, // Get all posts
-    'post_status' => 'publish'
-));
-
-if ($all_posts_query->have_posts()) :
-    // Collect all posts with their data for sorting
-    $posts_data = array();
-    while ($all_posts_query->have_posts()) : $all_posts_query->the_post();
+                <!-- Table Body -->
+                <?php while (have_posts()) : the_post();
                     // Get the JSON data
                     $post_id = get_the_ID();
                     $json_data = get_post_meta($post_id, 'kiosk_chatgpt_json', true);
@@ -83,138 +98,6 @@ if ($all_posts_query->have_posts()) :
 
                     $category = get_the_category();
                     $category_name = !empty($category) ? $category[0]->name : 'Uncategorized';
-                    
-                    // Calculate Active Status for jobs
-                    $active_status = '';
-                    $status_class = '';
-                    $status_priority = 4; // Default priority (no status)
-                    
-                    if ($category_slug !== 'admit-card' && $category_slug !== 'result') {
-                        $current_time = current_time('timestamp');
-                        $start_timestamp = ($start_date !== 'N/A') ? strtotime($start_date) : false;
-                        $last_timestamp = ($last_date !== 'N/A') ? strtotime($last_date) : false;
-                        
-                        if ($start_timestamp && $start_timestamp > $current_time) {
-                            // Start date is in the future
-                            $active_status = 'Upcoming';
-                            $status_class = 'status-upcoming';
-                            $status_priority = 2;
-                        } elseif ($start_timestamp && ($current_time - $start_timestamp) <= 7 * 24 * 60 * 60) {
-                            // Start date is within the past week
-                            $active_status = 'New';
-                            $status_class = 'status-new';
-                            $status_priority = 3;
-                        } elseif ($last_timestamp && ($last_timestamp - $current_time) <= 7 * 24 * 60 * 60 && $last_timestamp >= $current_time) {
-                            // Last date is within 1 week from now
-                            $active_status = 'Ending Soon';
-                            $status_class = 'status-ending';
-                            $status_priority = 1; // Highest priority
-                        }
-                    }
-                    
-                    // Store post data
-                    $posts_data[] = array(
-                        'post_id' => $post_id,
-                        'post_title' => $post_title,
-                        'organization' => $organization,
-                        'start_date' => $start_date,
-                        'last_date' => $last_date,
-                        'admit_card_date' => $admit_card_date,
-                        'result_date' => $result_date,
-                        'next_date' => $next_date,
-                        'category_name' => $category_name,
-                        'active_status' => $active_status,
-                        'status_class' => $status_class,
-                        'status_priority' => $status_priority,
-                        'last_timestamp' => $last_timestamp,
-                        'start_timestamp' => $start_timestamp
-                    );
-                endwhile;
-                
-                // Reset post data
-                wp_reset_postdata();
-                
-                // Sort posts by status priority and date
-                // Ending Soon: sorted by last_date (soonest first)
-                // Upcoming: sorted by start_date (soonest first)
-                // New: sorted by start_date (most recent first)
-                usort($posts_data, function($a, $b) {
-                    // First, sort by status priority
-                    if ($a['status_priority'] != $b['status_priority']) {
-                        return $a['status_priority'] - $b['status_priority'];
-                    }
-                    
-                    // Within same priority, sort by date
-                    if ($a['status_priority'] == 1) {
-                        // Ending Soon - sort by last_date ascending (soonest first)
-                        $date_a = $a['last_timestamp'] ?: PHP_INT_MAX;
-                        $date_b = $b['last_timestamp'] ?: PHP_INT_MAX;
-                        return $date_a - $date_b;
-                    } elseif ($a['status_priority'] == 2) {
-                        // Upcoming - sort by start_date ascending (soonest first)
-                        $date_a = $a['start_timestamp'] ?: PHP_INT_MAX;
-                        $date_b = $b['start_timestamp'] ?: PHP_INT_MAX;
-                        return $date_a - $date_b;
-                    } elseif ($a['status_priority'] == 3) {
-                        // New - sort by start_date descending (most recent first)
-                        $date_a = $a['start_timestamp'] ?: 0;
-                        $date_b = $b['start_timestamp'] ?: 0;
-                        return $date_b - $date_a;
-                    }
-                    
-                    return 0;
-                });
-                
-                // Calculate pagination
-                $total_posts = count($posts_data);
-                $total_pages = ceil($total_posts / $posts_per_page);
-                $offset = ($paged - 1) * $posts_per_page;
-                $current_page_posts = array_slice($posts_data, $offset, $posts_per_page);
-                ?>
-                
-    <header class="page-header">
-        <h1 class="page-title"><?php single_cat_title(); ?></h1>
-        <p class="page-description">
-            <?php echo $total_posts; ?> notifications found
-        </p>
-    </header>
-    
-    <div class="main-content-wrapper">
-        <div class="posts-table-wrapper">
-            <div class="posts-table">
-                <!-- Table Header -->
-                <div class="table-header">
-                    <div class="th-cell th-title">Title</div>
-                    <div class="th-cell th-organization">Organization</div>
-                    <?php if ($category_slug === 'admit-card'): ?>
-                        <div class="th-cell th-date">Admit Card Date</div>
-                        <div class="th-cell th-result">Result Date</div>
-                    <?php elseif ($category_slug === 'result'): ?>
-                        <div class="th-cell th-result">Result Date</div>
-                        <div class="th-cell th-next">Next Date</div>
-                    <?php else: ?>
-                        <div class="th-cell th-start">Start Date</div>
-                        <div class="th-cell th-last">Last Date</div>
-                        <div class="th-cell th-status">Active Status</div>
-                    <?php endif; ?>
-                    <div class="th-cell th-action">Action</div>
-                </div>
-
-                <!-- Table Body -->
-                <?php
-                // Display sorted posts for current page
-                foreach ($current_page_posts as $post_item) :
-                    $post_id = $post_item['post_id'];
-                    $post_title = $post_item['post_title'];
-                    $organization = $post_item['organization'];
-                    $start_date = $post_item['start_date'];
-                    $last_date = $post_item['last_date'];
-                    $admit_card_date = $post_item['admit_card_date'];
-                    $result_date = $post_item['result_date'];
-                    $next_date = $post_item['next_date'];
-                    $category_name = $post_item['category_name'];
-                    $active_status = $post_item['active_status'];
-                    $status_class = $post_item['status_class'];
                 ?>
                     <div class="table-row">
 
@@ -252,14 +135,6 @@ if ($all_posts_query->have_posts()) :
                             <div class="td-cell td-last" data-label="Last Date">
                                 <span class="date-highlight"><?php echo esc_html($last_date); ?></span>
                             </div>
-                            
-                            <div class="td-cell td-status" data-label="Active Status">
-                                <?php if (!empty($active_status)): ?>
-                                    <span class="status-badge <?php echo esc_attr($status_class); ?>">
-                                        <?php echo esc_html($active_status); ?>
-                                    </span>
-                                <?php endif; ?>
-                            </div>
                         <?php endif; ?>
 
                         <div class="td-cell td-action" data-label="Action">
@@ -268,30 +143,24 @@ if ($all_posts_query->have_posts()) :
                             </a>
                         </div>
                     </div>
-                <?php endforeach; ?>
+                <?php endwhile; ?>
             </div>
         </div>
     </div>
     <?php
-    // Custom Pagination based on sorted posts
-    if ($total_pages > 1) :
-        $pagination = paginate_links(array(
-            'base' => get_pagenum_link(1) . '%_%',
-            'format' => 'page/%#%/',
-            'current' => $paged,
-            'total' => $total_pages,
-            'prev_text' => '← Previous',
-            'next_text' => 'Next →',
-            'type' => 'array'
-        ));
-        
-        if ($pagination) : ?>
-            <div class="pagination-wrapper">
-                <?php foreach ($pagination as $page) : ?>
-                    <?php echo $page; ?>
-                <?php endforeach; ?>
-            </div>
-        <?php endif; ?>
+    // Pagination
+    $pagination = paginate_links(array(
+        'prev_text' => '← Previous',
+        'next_text' => 'Next →',
+        'type' => 'array'
+    ));
+
+    if ($pagination) : ?>
+        <div class="pagination-wrapper">
+            <?php foreach ($pagination as $page) : ?>
+                <?php echo $page; ?>
+            <?php endforeach; ?>
+        </div>
     <?php endif; ?>
 
 <?php else : ?>

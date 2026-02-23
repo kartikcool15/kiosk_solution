@@ -49,7 +49,9 @@ function kiosk_enqueue_scripts() {
 }
 add_action('wp_enqueue_scripts', 'kiosk_enqueue_scripts');
 
-// Filter posts by education taxonomy on category archives
+// Filter by education taxonomy - Now using taxonomy archives (taxonomy-education.php)
+// This function is no longer needed but kept for reference
+/*
 function kiosk_filter_by_education($query) {
     // Only on frontend for latest-job category or homepage
     if (!is_admin() && $query->is_main_query() && (is_category('latest-job') || is_home() || is_front_page())) {
@@ -71,6 +73,7 @@ function kiosk_filter_by_education($query) {
     }
 }
 add_action('pre_get_posts', 'kiosk_filter_by_education');
+*/
 
 /**
  * Bulk process existing posts to assign education taxonomy

@@ -57,7 +57,7 @@
                         ?>
                     </select>
 
-                    <?php if (is_category('latest-job') || is_home() || is_front_page()) :
+                    <?php if (is_category('latest-job') || is_home() || is_front_page() || is_tax('education')) :
                         // Get all education terms
                         $education_terms = get_terms(array(
                             'taxonomy' => 'education',
@@ -66,20 +66,22 @@
                             'order' => 'ASC'
                         ));
 
-                        // Always use latest-job category for education filter
-                        $current_category = get_category_by_slug('latest-job');
-                        $category_link = get_category_link($current_category);
-                        $current_education = isset($_GET['education']) ? $_GET['education'] : '';
+                        // Get current education term if on taxonomy archive
+                        $current_education = '';
+                        if (is_tax('education')) {
+                            $current_term = get_queried_object();
+                            $current_education = $current_term->slug;
+                        }
                     ?>
-                        <select class="sidebar-dropdown-select" id="education-dropdown" data-category-url="<?php echo esc_url($category_link); ?>">
-                            <option value="">-- Filter by Education --</option>
+                        <select class="sidebar-dropdown-select" id="education-dropdown">
+                            <option value="<?php echo esc_url(get_category_link(get_category_by_slug('latest-job'))); ?>">-- Filter by Education --</option>
                             <?php if (!empty($education_terms) && !is_wp_error($education_terms)) : ?>
                                 <?php foreach ($education_terms as $term) :
                                     $selected = ($current_education === $term->slug) ? 'selected' : '';
-                                    // Build education filter URL
-                                    $filter_url = add_query_arg('education', $term->slug, $category_link);
+                                    // Use taxonomy term archive URL
+                                    $term_link = get_term_link($term, 'education');
                                 ?>
-                                    <option value="<?php echo esc_url($filter_url); ?>" <?php echo $selected; ?>>
+                                    <option value="<?php echo esc_url($term_link); ?>" <?php echo $selected; ?>>
                                         <?php echo esc_html($term->name); ?> (<?php echo $term->count; ?>)
                                     </option>
                                 <?php endforeach; ?>
