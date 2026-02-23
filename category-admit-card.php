@@ -32,10 +32,35 @@ if ($all_posts_query->have_posts()) :
         // Get dates - prioritize custom fields over JSON
         $dates = kiosk_get_post_dates($post_id);
         $admit_card_date = $dates['admit_card_date'];
+        $exam_date = $dates['exam_date'];
         $result_date = $dates['result_date'];
 
         // Get timestamp for sorting
         $admit_card_timestamp = ($admit_card_date !== 'N/A') ? strtotime($admit_card_date) : 0;
+        $exam_timestamp = ($exam_date !== 'N/A') ? strtotime($exam_date) : false;
+        $current_time = current_time('timestamp');
+        
+        // Calculate Active Status
+        $active_status = '';
+        $status_class = '';
+        $status_priority = 4; // Default priority (no status)
+        
+        if ($exam_timestamp && ($exam_timestamp - $current_time) <= 7 * 24 * 60 * 60 && $exam_timestamp >= $current_time) {
+            // Exam date is within 7 days from now
+            $active_status = 'Exam Soon';
+            $status_class = 'status-ending';
+            $status_priority = 1; // Highest priority
+        } elseif ($admit_card_timestamp && $admit_card_timestamp <= $current_time) {
+            // Admit card date has passed (card is released)
+            $active_status = 'Available';
+            $status_class = 'status-new';
+            $status_priority = 2;
+        } elseif ($admit_card_timestamp && ($admit_card_timestamp - $current_time) <= 10 * 24 * 60 * 60) {
+            // Admit card date is within 10 days in future
+            $active_status = 'Releasing Soon';
+            $status_class = 'status-upcoming';
+            $status_priority = 3;
+        }
         
         // Store post data
         $posts_data[] = array(
@@ -43,21 +68,31 @@ if ($all_posts_query->have_posts()) :
             'post_title' => $post_title,
             'organization' => $organization,
             'admit_card_date' => $admit_card_date,
+            'exam_date' => $exam_date,
             'result_date' => $result_date,
-            'admit_card_timestamp' => $admit_card_timestamp
+            'active_status' => $active_status,
+            'status_class' => $status_class,
+            'status_priority' => $status_priority,
+            'admit_card_timestamp' => $admit_card_timestamp,
+            'exam_timestamp' => $exam_timestamp
         );
     endwhile;
     
     // Reset post data
     wp_reset_postdata();
     
-    // Sort posts by admit card date (newest first)
+    // Sort posts by status priority first, then by exam date for "Exam Soon"
     usort($posts_data, function($a, $b) {
-        // Sort by admit card date descending (newest first)
-        if ($a['admit_card_timestamp'] != $b['admit_card_timestamp']) {
-            return $b['admit_card_timestamp'] - $a['admit_card_timestamp'];
+        // First, sort by status priority
+        if ($a['status_priority'] != $b['status_priority']) {
+            return $a['status_priority'] - $b['status_priority'];
         }
-        return 0;
+        // If same priority, sort by exam date (closest first) for Exam Soon
+        if ($a['status_priority'] == 1 && $a['exam_timestamp'] != $b['exam_timestamp']) {
+            return $a['exam_timestamp'] - $b['exam_timestamp'];
+        }
+        // Otherwise sort by admit card date descending (newest first)
+        return $b['admit_card_timestamp'] - $a['admit_card_timestamp'];
     });
     
     // Calculate pagination
@@ -82,7 +117,9 @@ if ($all_posts_query->have_posts()) :
                     <div class="th-cell th-title">Title</div>
                     <div class="th-cell th-organization">Organization</div>
                     <div class="th-cell th-date">Admit Card Date</div>
+                    <div class="th-cell th-exam">Exam Date</div>
                     <div class="th-cell th-result">Result Date</div>
+                    <div class="th-cell th-status">Active Status</div>
                     <div class="th-cell th-action">Action</div>
                 </div>
 
@@ -92,7 +129,10 @@ if ($all_posts_query->have_posts()) :
                     $post_title = $post_item['post_title'];
                     $organization = $post_item['organization'];
                     $admit_card_date = $post_item['admit_card_date'];
+                    $exam_date = $post_item['exam_date'];
                     $result_date = $post_item['result_date'];
+                    $active_status = $post_item['active_status'];
+                    $status_class = $post_item['status_class'];
                 ?>
                     <div class="table-row">
                         <div class="td-cell td-title" data-label="Title">
@@ -106,11 +146,23 @@ if ($all_posts_query->have_posts()) :
                         </div>
 
                         <div class="td-cell td-date" data-label="Admit Card Date">
-                            <span class="date-highlight"><?php echo esc_html($admit_card_date); ?></span>
+                            <?php echo esc_html($admit_card_date); ?>
+                        </div>
+
+                        <div class="td-cell td-exam" data-label="Exam Date">
+                            <span class="date-highlight"><?php echo esc_html($exam_date); ?></span>
                         </div>
 
                         <div class="td-cell td-result" data-label="Result Date">
                             <?php echo esc_html($result_date); ?>
+                        </div>
+
+                        <div class="td-cell td-status" data-label="Active Status">
+                            <?php if ($active_status): ?>
+                                <span class="status-badge <?php echo esc_attr($status_class); ?>">
+                                    <?php echo esc_html($active_status); ?>
+                                </span>
+                            <?php endif; ?>
                         </div>
 
                         <div class="td-cell td-action" data-label="Action">
