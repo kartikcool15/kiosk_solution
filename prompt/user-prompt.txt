@@ -22,6 +22,7 @@ Extract and normalize the following structure from ALL available ACF fields. Par
   post_title,
   post_content_summary: "Create a concise, SEO-optimized summary of maximum 100 words. Include relevant keywords such as job title, organization name, vacancy count, key dates, and eligibility. Make it engaging and informative for search engines and readers.",
   organization,
+  education: "Extract education qualifications as array of strings. Common values: ['10th Pass', '12th Pass', 'Graduate', 'Post Graduate', 'ITI', 'Diploma', 'Engineering', 'B.Tech', 'M.Tech', 'MBA', 'Medical', 'Law', 'Any Degree', 'Ph.D']. Include ALL education levels mentioned in the job post. If multiple posts have different education requirements, include all unique values. Format: [\"10th Pass\", \"12th Pass\", \"Graduate\"]",
   dates {
     start_date,
     last_date,

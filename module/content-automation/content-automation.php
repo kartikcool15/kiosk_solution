@@ -1014,6 +1014,96 @@ class Kiosk_Content_Automation
     }
 
     /**
+     * Set education taxonomy terms for post
+     * Only applies to posts in 'latest-job' category
+     */
+    private function set_post_education($post_id, $chatgpt_json)
+    {
+        // Check if post is in 'latest-job' category
+        $categories = wp_get_post_categories($post_id, array('fields' => 'slugs'));
+        if (!in_array('latest-job', $categories)) {
+            return false; // Skip if not in latest-job category
+        }
+
+        // Parse ChatGPT JSON
+        $chatgpt_data = json_decode($chatgpt_json, true);
+
+        if (!is_array($chatgpt_data) || empty($chatgpt_data['education'])) {
+            return false;
+        }
+
+        $education_values = $chatgpt_data['education'];
+
+        // Ensure it's an array
+        if (!is_array($education_values)) {
+            $education_values = array($education_values);
+        }
+
+        // Get or create terms for each education value
+        $term_ids = array();
+        foreach ($education_values as $education_name) {
+            $term_id = $this->get_or_create_education_term($education_name);
+            if ($term_id) {
+                $term_ids[] = $term_id;
+            }
+        }
+
+        if (empty($term_ids)) {
+            return false;
+        }
+
+        // Set the terms for the post (replacing existing terms)
+        $result = wp_set_object_terms($post_id, $term_ids, 'education', false);
+
+        if (is_wp_error($result)) {
+            error_log('Kiosk Automation: Failed to set education terms for post ' . $post_id . ': ' . $result->get_error_message());
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * Get or create education taxonomy term
+     * Returns term ID or false on failure
+     */
+    private function get_or_create_education_term($education_name)
+    {
+        if (empty($education_name)) {
+            return false;
+        }
+
+        // Clean and sanitize the education name
+        $education_name = trim($education_name);
+        $education_name = sanitize_text_field($education_name);
+
+        if (empty($education_name)) {
+            return false;
+        }
+
+        // Check if term already exists
+        $term = get_term_by('name', $education_name, 'education');
+
+        if ($term && !is_wp_error($term)) {
+            return $term->term_id;
+        }
+
+        // Create new term
+        $result = wp_insert_term($education_name, 'education');
+
+        if (is_wp_error($result)) {
+            // Check if error is because term already exists
+            if (isset($result->error_data['term_exists'])) {
+                return $result->error_data['term_exists'];
+            }
+            error_log('Kiosk Automation: Failed to create education term "' . $education_name . '": ' . $result->get_error_message());
+            return false;
+        }
+
+        return $result['term_id'];
+    }
+
+    /**
      * Check if post already exists (checks all post statuses)
      */
     private function post_exists_by_source_id($source_id)
@@ -1260,6 +1350,9 @@ class Kiosk_Content_Automation
 
                 // Set organization taxonomy from ChatGPT JSON
                 $this->set_post_organization($post_id, $chatgpt_result);
+
+                // Set education taxonomy for latest-job category posts
+                $this->set_post_education($post_id, $chatgpt_result);
 
                 // Publish the post now that ChatGPT processing is complete
                 wp_publish_post($post_id);

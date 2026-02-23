@@ -109,6 +109,30 @@ footer {
 	}
 }
 
+/* Taxonomy Filter Styles */
+.taxonomy-filter-wrapper {
+	padding: 8px 24px;
+	border-bottom: 1px solid $border-color;
+	background: $sidebar-bg;
+
+	select {
+		padding: 0.5rem 1rem;
+		max-width: 400px;
+		width: 100%;
+		background: $main-bg;
+		border: 1px solid $border-color;
+		color: $text-white;
+		border-radius: 6px;
+		cursor: pointer;
+		font-size: 14px;
+
+		&:focus {
+			outline: none;
+			border-color: $primary-color;
+		}
+	}
+}
+
 .main-content {
 	flex: 1;
 	background-color: $main-bg;
@@ -349,6 +373,14 @@ footer {
 
 	.page-header .page-title {
 		font-size: 1.25rem;
+	}
+
+	.taxonomy-filter-wrapper {
+		padding: 8px 15px;
+
+		select {
+			max-width: 100%;
+		}
 	}
 }
 

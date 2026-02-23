@@ -17,6 +17,34 @@ get_header(); ?>
             <?php echo $wp_query->found_posts; ?> notifications found
         </p>
     </header>
+    
+    <?php if ($category_slug === 'latest-job') : 
+        // Get all education terms
+        $education_terms = get_terms(array(
+            'taxonomy' => 'education',
+            'hide_empty' => true,
+            'orderby' => 'name',
+            'order' => 'ASC'
+        ));
+        
+        $current_education = isset($_GET['education']) ? $_GET['education'] : '';
+    ?>
+        <div class="taxonomy-filter-wrapper">
+            <select class="sidebar-dropdown-select" id="education-dropdown">
+                <option value="">-- Filter by Education --</option>
+                <?php if (!empty($education_terms) && !is_wp_error($education_terms)) : ?>
+                    <?php foreach ($education_terms as $term) : 
+                        $selected = ($current_education === $term->slug) ? 'selected' : '';
+                    ?>
+                        <option value="<?php echo esc_attr($term->slug); ?>" <?php echo $selected; ?>>
+                            <?php echo esc_html($term->name); ?> (<?php echo $term->count; ?>)
+                        </option>
+                    <?php endforeach; ?>
+                <?php endif; ?>
+            </select>
+        </div>
+    <?php endif; ?>
+    
     <div class="main-content-wrapper">
         <div class="posts-table-wrapper">
             <div class="posts-table">
