@@ -34,6 +34,7 @@ get_header(); ?>
                     <?php else: ?>
                         <div class="th-cell th-start">Start Date</div>
                         <div class="th-cell th-last">Last Date</div>
+                        <div class="th-cell th-status">Active Status</div>
                     <?php endif; ?>
                     <div class="th-cell th-action">Action</div>
                 </div>
@@ -97,6 +98,29 @@ get_header(); ?>
 
                     $category = get_the_category();
                     $category_name = !empty($category) ? $category[0]->name : 'Uncategorized';
+                    
+                    // Calculate Active Status for jobs
+                    $active_status = '';
+                    $status_class = '';
+                    if ($category_slug !== 'admit-card' && $category_slug !== 'result') {
+                        $current_time = current_time('timestamp');
+                        $start_timestamp = ($start_date !== 'N/A') ? strtotime($start_date) : false;
+                        $last_timestamp = ($last_date !== 'N/A') ? strtotime($last_date) : false;
+                        
+                        if ($start_timestamp && $start_timestamp > $current_time) {
+                            // Start date is in the future
+                            $active_status = 'Upcoming';
+                            $status_class = 'status-upcoming';
+                        } elseif ($start_timestamp && ($current_time - $start_timestamp) <= 7 * 24 * 60 * 60) {
+                            // Start date is within the past week
+                            $active_status = 'New';
+                            $status_class = 'status-new';
+                        } elseif ($last_timestamp && ($last_timestamp - $current_time) <= 7 * 24 * 60 * 60 && $last_timestamp >= $current_time) {
+                            // Last date is within 1 week from now
+                            $active_status = 'Ending Soon';
+                            $status_class = 'status-ending';
+                        }
+                    }
                 ?>
                     <div class="table-row">
 
@@ -133,6 +157,14 @@ get_header(); ?>
 
                             <div class="td-cell td-last" data-label="Last Date">
                                 <span class="date-highlight"><?php echo esc_html($last_date); ?></span>
+                            </div>
+                            
+                            <div class="td-cell td-status" data-label="Active Status">
+                                <?php if (!empty($active_status)): ?>
+                                    <span class="status-badge <?php echo esc_attr($status_class); ?>">
+                                        <?php echo esc_html($active_status); ?>
+                                    </span>
+                                <?php endif; ?>
                             </div>
                         <?php endif; ?>
 
