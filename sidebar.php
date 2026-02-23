@@ -1,6 +1,6 @@
 <aside id="custom-sidebar" class="custom-sidebar">
     <div class="sidebar-header">
-        <h2 class="sidebar-brand">SarkariJobs</h2>
+        <h2 class="sidebar-brand">Govt Jobs Exams</h2>
         <button class="sidebar-toggle">
             <span></span>
             <span></span>
