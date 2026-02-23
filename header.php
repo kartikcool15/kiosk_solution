@@ -55,6 +55,6 @@
                 </select>
                 <ul class="top-menu">
                     <li><a href="<?php echo home_url(); ?>">Home</a></li>
-                    <li>Login</li>
+                    <!-- <li>Login</li> -->
                 </ul>
             </div>

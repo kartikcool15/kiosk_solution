@@ -66,7 +66,7 @@
                     <span>Answer Keys</span>
                 </a>
             </li>
-            <li class="sidebar-item <?php echo (is_category('sarkari-job')) ? 'active' : ''; ?>">
+            <!-- <li class="sidebar-item <?php echo (is_category('sarkari-job')) ? 'active' : ''; ?>">
                 <a href="<?php echo esc_url(get_category_link(get_category_by_slug('sarkari-job'))); ?>" class="sidebar-link">
                     <svg class="sidebar-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect>
@@ -83,7 +83,7 @@
                     </svg>
                     <span>Documents</span>
                 </a>
-            </li>
+            </li> -->
 
         </ul>
 
