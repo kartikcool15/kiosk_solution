@@ -51,8 +51,8 @@ add_action('wp_enqueue_scripts', 'kiosk_enqueue_scripts');
 
 // Filter posts by education taxonomy on category archives
 function kiosk_filter_by_education($query) {
-    // Only on frontend category archives for latest-job
-    if (!is_admin() && $query->is_main_query() && is_category('latest-job')) {
+    // Only on frontend for latest-job category or homepage
+    if (!is_admin() && $query->is_main_query() && (is_category('latest-job') || is_home() || is_front_page())) {
         // Check if education filter is set
         if (isset($_GET['education']) && !empty($_GET['education'])) {
             $education_term = $_GET['education'];

@@ -47,19 +47,15 @@
                 },
                 events: {
                     afterChange: function(newVal) {
-                        var url = new URL(window.location.href);
-                        
-                        // Remove existing education parameters
-                        url.searchParams.delete('education');
-                        url.searchParams.delete('education[]');
-                        
-                        // Add new education parameter if selected
                         if (newVal && newVal.length > 0 && newVal[0].value !== '') {
-                            url.searchParams.set('education', newVal[0].value);
+                            window.location.href = newVal[0].value;
+                        } else {
+                            // If "-- Filter by Education --" selected, go back to category without filter
+                            var categoryUrl = $('#education-dropdown').data('category-url');
+                            if (categoryUrl) {
+                                window.location.href = categoryUrl;
+                            }
                         }
-                        
-                        // Reload page with new filter
-                        window.location.href = url.toString();
                     }
                 }
             });

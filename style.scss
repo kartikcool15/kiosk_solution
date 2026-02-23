@@ -145,6 +145,15 @@ footer {
 		align-items: center;
 		justify-content: space-between;
 		background: #111111;
+		
+		.topbar-filters {
+			display: flex;
+			gap: 12px;
+			align-items: center;
+			flex-wrap: wrap;
+			flex: 1;
+		}
+		
 		select {
 			padding: 0.25rem 1rem;
 			max-width: 400px;
