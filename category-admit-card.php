@@ -147,11 +147,11 @@ if ($all_posts_query->have_posts()) :
                         </div>
 
                         <div class="td-cell td-date" data-label="Admit Card Date">
-                            <?php echo esc_html($admit_card_date); ?>
+                            <?php echo esc_html(kiosk_format_date_display($admit_card_date)); ?>
                         </div>
 
                         <div class="td-cell td-exam" data-label="Exam Date">
-                            <?php echo esc_html($exam_date); ?>
+                            <?php echo esc_html(kiosk_format_date_display($exam_date)); ?>
                         </div>
 
                         <div class="td-cell td-status" data-label="Active Status">

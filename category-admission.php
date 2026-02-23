@@ -35,8 +35,31 @@ if ($all_posts_query->have_posts()) :
         $last_date = $dates['last_date'];
 
         // Get timestamp for sorting
-        $start_timestamp = ($start_date !== 'N/A') ? strtotime($start_date) : 0;
-        $last_timestamp = ($last_date !== 'N/A') ? strtotime($last_date) : 0;
+        $start_timestamp = ($start_date !== 'N/A') ? strtotime($start_date) : false;
+        $last_timestamp = ($last_date !== 'N/A') ? strtotime($last_date) : false;
+        $current_time = current_time('timestamp');
+        
+        // Calculate Active Status (same as latest-job category)
+        $active_status = '';
+        $status_class = '';
+        $status_priority = 4; // Default priority (no status)
+        
+        if ($start_timestamp && $start_timestamp > $current_time) {
+            // Start date is in the future
+            $active_status = 'Upcoming';
+            $status_class = 'status-upcoming';
+            $status_priority = 2;
+        } elseif ($start_timestamp && ($current_time - $start_timestamp) <= 7 * 24 * 60 * 60) {
+            // Start date is within the past week
+            $active_status = 'New';
+            $status_class = 'status-new';
+            $status_priority = 3;
+        } elseif ($last_timestamp && ($last_timestamp - $current_time) <= 7 * 24 * 60 * 60 && $last_timestamp >= $current_time) {
+            // Last date is within 1 week from now
+            $active_status = 'Ending Soon';
+            $status_class = 'status-ending';
+            $status_priority = 1; // Highest priority
+        }
         
         // Store post data
         $posts_data[] = array(
@@ -45,6 +68,9 @@ if ($all_posts_query->have_posts()) :
             'organization' => $organization,
             'start_date' => $start_date,
             'last_date' => $last_date,
+            'active_status' => $active_status,
+            'status_class' => $status_class,
+            'status_priority' => $status_priority,
             'start_timestamp' => $start_timestamp,
             'last_timestamp' => $last_timestamp
         );
@@ -53,14 +79,26 @@ if ($all_posts_query->have_posts()) :
     // Reset post data
     wp_reset_postdata();
     
-    // Sort posts by last date descending (most recent deadline first), then by start date
+    // Sort posts by status priority first (same as latest-job category)
     usort($posts_data, function($a, $b) {
-        // Sort by last date descending (upcoming deadlines first)
-        if ($a['last_timestamp'] != $b['last_timestamp']) {
-            return $b['last_timestamp'] - $a['last_timestamp'];
+        // First, sort by status priority
+        if ($a['status_priority'] != $b['status_priority']) {
+            return $a['status_priority'] - $b['status_priority'];
         }
-        // If last dates are same, sort by start date descending
-        return $b['start_timestamp'] - $a['start_timestamp'];
+        // For "Ending Soon", sort by closest deadline
+        if ($a['status_priority'] == 1 && $a['last_timestamp'] != $b['last_timestamp']) {
+            return $a['last_timestamp'] - $b['last_timestamp'];
+        }
+        // For "Upcoming", sort by start date
+        if ($a['status_priority'] == 2 && $a['start_timestamp'] != $b['start_timestamp']) {
+            return $a['start_timestamp'] - $b['start_timestamp'];
+        }
+        // For "New", sort by most recent start date
+        if ($a['status_priority'] == 3 && $a['start_timestamp'] != $b['start_timestamp']) {
+            return $b['start_timestamp'] - $a['start_timestamp'];
+        }
+        // Default: sort by last date descending
+        return $b['last_timestamp'] - $a['last_timestamp'];
     });
     
     // Calculate pagination
@@ -86,6 +124,7 @@ if ($all_posts_query->have_posts()) :
                     <div class="th-cell th-organization">Organization</div>
                     <div class="th-cell th-start">Start Date</div>
                     <div class="th-cell th-last">Last Date</div>
+                    <div class="th-cell th-status">Active Status</div>
                     <div class="th-cell th-action">Action</div>
                 </div>
 
@@ -96,6 +135,8 @@ if ($all_posts_query->have_posts()) :
                     $organization = $post_item['organization'];
                     $start_date = $post_item['start_date'];
                     $last_date = $post_item['last_date'];
+                    $active_status = $post_item['active_status'];
+                    $status_class = $post_item['status_class'];
                 ?>
                     <div class="table-row">
                         <div class="td-cell td-title" data-label="Title">
@@ -109,11 +150,19 @@ if ($all_posts_query->have_posts()) :
                         </div>
 
                         <div class="td-cell td-start" data-label="Start Date">
-                            <?php echo esc_html($start_date); ?>
+                            <?php echo esc_html(kiosk_format_date_display($start_date)); ?>
                         </div>
 
                         <div class="td-cell td-last" data-label="Last Date">
-                            <span class="date-highlight"><?php echo esc_html($last_date); ?></span>
+                            <span class="date-highlight"><?php echo esc_html(kiosk_format_date_display($last_date)); ?></span>
+                        </div>
+
+                        <div class="td-cell td-status" data-label="Active Status">
+                            <?php if ($active_status): ?>
+                                <span class="status-badge <?php echo esc_attr($status_class); ?>">
+                                    <?php echo esc_html($active_status); ?>
+                                </span>
+                            <?php endif; ?>
                         </div>
 
                         <div class="td-cell td-action" data-label="Action">

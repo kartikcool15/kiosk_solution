@@ -154,11 +154,11 @@ if ($all_posts_query->have_posts()) :
                         </div>
 
                         <div class="td-cell td-result" data-label="Result Date">
-                            <span class="date-highlight"><?php echo esc_html($result_date); ?></span>
+                            <span class="date-highlight"><?php echo esc_html(kiosk_format_date_display($result_date)); ?></span>
                         </div>
 
                         <div class="td-cell td-next" data-label="Next Date">
-                            <?php echo esc_html($next_date); ?>
+                            <?php echo esc_html(kiosk_format_date_display($next_date)); ?>
                         </div>
 
                         <div class="td-cell td-status" data-label="Active Status">

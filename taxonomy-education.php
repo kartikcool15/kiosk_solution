@@ -197,11 +197,11 @@ if ($all_posts_query->have_posts()) :
                         </div>
 
                         <div class="td-cell td-start" data-label="Start Date">
-                            <?php echo esc_html($start_date); ?>
+                            <?php echo esc_html(kiosk_format_date_display($start_date)); ?>
                         </div>
 
                         <div class="td-cell td-last" data-label="Last Date">
-                            <span class="date-highlight"><?php echo esc_html($last_date); ?></span>
+                            <span class="date-highlight"><?php echo esc_html(kiosk_format_date_display($last_date)); ?></span>
                         </div>
                         
                         <div class="td-cell td-status" data-label="Active Status">

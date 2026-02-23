@@ -254,6 +254,33 @@ function kiosk_get_post_dates($post_id) {
 }
 
 /**
+ * Format date to show "Today" or "Tomorrow" if applicable
+ * @param string $date Date in YYYY-MM-DD format
+ * @return string Formatted date
+ */
+function kiosk_format_date_display($date) {
+    if ($date === 'N/A' || empty($date)) {
+        return $date;
+    }
+    
+    $date_timestamp = strtotime($date);
+    if (!$date_timestamp) {
+        return $date;
+    }
+    
+    $today = strtotime(date('Y-m-d', current_time('timestamp')));
+    $tomorrow = strtotime('+1 day', $today);
+    
+    if (date('Y-m-d', $date_timestamp) === date('Y-m-d', $today)) {
+        return 'Today';
+    } elseif (date('Y-m-d', $date_timestamp) === date('Y-m-d', $tomorrow)) {
+        return 'Tomorrow';
+    }
+    
+    return $date;
+}
+
+/**
  * Bulk sync dates from ChatGPT JSON to custom fields for all existing posts
  * Run this once via URL: yoursite.com/?sync_dates_to_custom_fields=1
  */
