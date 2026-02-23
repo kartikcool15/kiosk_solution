@@ -6,44 +6,26 @@
  */
 
 get_header(); ?>
-<?php if (have_posts()) :
-    // Get current category
-    $current_category = get_queried_object();
-    $category_slug = $current_category->slug;
-?>
-    <header class="page-header">
-        <h1 class="page-title"><?php single_cat_title(); ?></h1>
-        <p class="page-description">
-            <?php echo $wp_query->found_posts; ?> notifications found
-        </p>
-    </header>
-    
-    <div class="main-content-wrapper">
-        <div class="posts-table-wrapper">
-            <div class="posts-table">
-                <!-- Table Header -->
-                <div class="table-header">
-                    <div class="th-cell th-title">Title</div>
-                    <div class="th-cell th-organization">Organization</div>
-                    <?php if ($category_slug === 'admit-card'): ?>
-                        <div class="th-cell th-date">Admit Card Date</div>
-                        <div class="th-cell th-result">Result Date</div>
-                    <?php elseif ($category_slug === 'result'): ?>
-                        <div class="th-cell th-result">Result Date</div>
-                        <div class="th-cell th-next">Next Date</div>
-                    <?php else: ?>
-                        <div class="th-cell th-start">Start Date</div>
-                        <div class="th-cell th-last">Last Date</div>
-                        <div class="th-cell th-status">Active Status</div>
-                    <?php endif; ?>
-                    <div class="th-cell th-action">Action</div>
-                </div>
+<?php 
+// Get current category
+$current_category = get_queried_object();
+$category_slug = $current_category->slug;
 
-                <!-- Table Body -->
-                <?php 
-                // Collect all posts with their data for sorting
-                $posts_data = array();
-                while (have_posts()) : the_post();
+// Get current page number for pagination
+$paged = (get_query_var('paged')) ? get_query_var('paged') : 1;
+$posts_per_page = get_option('posts_per_page');
+
+// Fetch ALL posts from this category (no pagination limit)
+$all_posts_query = new WP_Query(array(
+    'cat' => $current_category->term_id,
+    'posts_per_page' => -1, // Get all posts
+    'post_status' => 'publish'
+));
+
+if ($all_posts_query->have_posts()) :
+    // Collect all posts with their data for sorting
+    $posts_data = array();
+    while ($all_posts_query->have_posts()) : $all_posts_query->the_post();
                     // Get the JSON data
                     $post_id = get_the_ID();
                     $json_data = get_post_meta($post_id, 'kiosk_chatgpt_json', true);
@@ -147,13 +129,53 @@ get_header(); ?>
                     );
                 endwhile;
                 
+                // Reset post data
+                wp_reset_postdata();
+                
                 // Sort posts by status priority (Ending Soon first, then Upcoming, then New)
                 usort($posts_data, function($a, $b) {
                     return $a['status_priority'] - $b['status_priority'];
                 });
                 
-                // Display sorted posts
-                foreach ($posts_data as $post_item) :
+                // Calculate pagination
+                $total_posts = count($posts_data);
+                $total_pages = ceil($total_posts / $posts_per_page);
+                $offset = ($paged - 1) * $posts_per_page;
+                $current_page_posts = array_slice($posts_data, $offset, $posts_per_page);
+                ?>
+                
+    <header class="page-header">
+        <h1 class="page-title"><?php single_cat_title(); ?></h1>
+        <p class="page-description">
+            <?php echo $total_posts; ?> notifications found
+        </p>
+    </header>
+    
+    <div class="main-content-wrapper">
+        <div class="posts-table-wrapper">
+            <div class="posts-table">
+                <!-- Table Header -->
+                <div class="table-header">
+                    <div class="th-cell th-title">Title</div>
+                    <div class="th-cell th-organization">Organization</div>
+                    <?php if ($category_slug === 'admit-card'): ?>
+                        <div class="th-cell th-date">Admit Card Date</div>
+                        <div class="th-cell th-result">Result Date</div>
+                    <?php elseif ($category_slug === 'result'): ?>
+                        <div class="th-cell th-result">Result Date</div>
+                        <div class="th-cell th-next">Next Date</div>
+                    <?php else: ?>
+                        <div class="th-cell th-start">Start Date</div>
+                        <div class="th-cell th-last">Last Date</div>
+                        <div class="th-cell th-status">Active Status</div>
+                    <?php endif; ?>
+                    <div class="th-cell th-action">Action</div>
+                </div>
+
+                <!-- Table Body -->
+                <?php
+                // Display sorted posts for current page
+                foreach ($current_page_posts as $post_item) :
                     $post_id = $post_item['post_id'];
                     $post_title = $post_item['post_title'];
                     $organization = $post_item['organization'];
@@ -223,19 +245,25 @@ get_header(); ?>
         </div>
     </div>
     <?php
-    // Pagination
-    $pagination = paginate_links(array(
-        'prev_text' => '← Previous',
-        'next_text' => 'Next →',
-        'type' => 'array'
-    ));
-
-    if ($pagination) : ?>
-        <div class="pagination-wrapper">
-            <?php foreach ($pagination as $page) : ?>
-                <?php echo $page; ?>
-            <?php endforeach; ?>
-        </div>
+    // Custom Pagination based on sorted posts
+    if ($total_pages > 1) :
+        $pagination = paginate_links(array(
+            'base' => get_pagenum_link(1) . '%_%',
+            'format' => 'page/%#%/',
+            'current' => $paged,
+            'total' => $total_pages,
+            'prev_text' => '← Previous',
+            'next_text' => 'Next →',
+            'type' => 'array'
+        ));
+        
+        if ($pagination) : ?>
+            <div class="pagination-wrapper">
+                <?php foreach ($pagination as $page) : ?>
+                    <?php echo $page; ?>
+                <?php endforeach; ?>
+            </div>
+        <?php endif; ?>
     <?php endif; ?>
 
 <?php else : ?>
