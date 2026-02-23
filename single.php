@@ -130,28 +130,7 @@
                     </div>
                 <?php endif; ?>
 
-                <!-- Eligibility Criteria Section -->
-                <?php if (!empty($data['eligibility_post_wise']) && is_array($data['eligibility_post_wise'])): ?>
-                    <div class="card">
-                        <div class="card-header">
-                            <h2 class="card-title">
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
-                                    <polyline points="22 4 12 14.01 9 11.01"></polyline>
-                                </svg>
-                                Eligibility Criteria
-                            </h2>
-                        </div>
 
-                        <div class="card-content">
-                            <?php foreach ($data['eligibility_post_wise'] as $item): ?>
-                                <?php if (!empty($item['post_name']) && !empty($item['eligibility'])): ?>
-                                    <strong><?php echo esc_html($item['post_name']); ?>:</strong> <?php echo esc_html($item['eligibility']); ?><br><br>
-                                <?php endif; ?>
-                            <?php endforeach; ?>
-                        </div>
-                    </div>
-                <?php endif; ?>
 
                 <!-- Age Limit Details -->
                 <?php if (!empty($data['age_eligibility']) || !empty($data['age_limit_as_on'])): ?>
@@ -255,6 +234,29 @@
                                     <?php endif; ?>
                                 <?php endforeach; ?>
                             </div>
+                        </div>
+                    </div>
+                <?php endif; ?>
+
+                <!-- Eligibility Criteria Section -->
+                <?php if (!empty($data['eligibility_post_wise']) && is_array($data['eligibility_post_wise'])): ?>
+                    <div class="card">
+                        <div class="card-header">
+                            <h2 class="card-title">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                                    <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                                </svg>
+                                Eligibility Criteria
+                            </h2>
+                        </div>
+
+                        <div class="card-content">
+                            <?php foreach ($data['eligibility_post_wise'] as $item): ?>
+                                <?php if (!empty($item['post_name']) && !empty($item['eligibility'])): ?>
+                                    <strong><?php echo esc_html($item['post_name']); ?>:</strong> <?php echo esc_html($item['eligibility']); ?><br><br>
+                                <?php endif; ?>
+                            <?php endforeach; ?>
                         </div>
                     </div>
                 <?php endif; ?>
