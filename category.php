@@ -125,16 +125,44 @@ if ($all_posts_query->have_posts()) :
                         'category_name' => $category_name,
                         'active_status' => $active_status,
                         'status_class' => $status_class,
-                        'status_priority' => $status_priority
+                        'status_priority' => $status_priority,
+                        'last_timestamp' => $last_timestamp,
+                        'start_timestamp' => $start_timestamp
                     );
                 endwhile;
                 
                 // Reset post data
                 wp_reset_postdata();
                 
-                // Sort posts by status priority (Ending Soon first, then Upcoming, then New)
+                // Sort posts by status priority and date
+                // Ending Soon: sorted by last_date (soonest first)
+                // Upcoming: sorted by start_date (soonest first)
+                // New: sorted by start_date (most recent first)
                 usort($posts_data, function($a, $b) {
-                    return $a['status_priority'] - $b['status_priority'];
+                    // First, sort by status priority
+                    if ($a['status_priority'] != $b['status_priority']) {
+                        return $a['status_priority'] - $b['status_priority'];
+                    }
+                    
+                    // Within same priority, sort by date
+                    if ($a['status_priority'] == 1) {
+                        // Ending Soon - sort by last_date ascending (soonest first)
+                        $date_a = $a['last_timestamp'] ?: PHP_INT_MAX;
+                        $date_b = $b['last_timestamp'] ?: PHP_INT_MAX;
+                        return $date_a - $date_b;
+                    } elseif ($a['status_priority'] == 2) {
+                        // Upcoming - sort by start_date ascending (soonest first)
+                        $date_a = $a['start_timestamp'] ?: PHP_INT_MAX;
+                        $date_b = $b['start_timestamp'] ?: PHP_INT_MAX;
+                        return $date_a - $date_b;
+                    } elseif ($a['status_priority'] == 3) {
+                        // New - sort by start_date descending (most recent first)
+                        $date_a = $a['start_timestamp'] ?: 0;
+                        $date_b = $b['start_timestamp'] ?: 0;
+                        return $date_b - $date_a;
+                    }
+                    
+                    return 0;
                 });
                 
                 // Calculate pagination
