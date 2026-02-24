@@ -390,4 +390,80 @@ require_once get_template_directory() . '/module/search-pincode/pincode-search.p
 require_once get_template_directory() . '/module/search-ifsc/ifsc-search.php';
 require_once get_template_directory() . '/module/image-tools/image-tools.php';
 require_once get_template_directory() . '/module/image-tools/image-converter.php';
+
+/**
+ * AJAX handler for dynamic post search
+ */
+function kiosk_ajax_search_posts() {
+    // Verify nonce for security
+    check_ajax_referer('kiosk_search_nonce', 'nonce');
+    
+    // Get search query
+    $search_query = isset($_POST['search']) ? sanitize_text_field($_POST['search']) : '';
+    
+    // Return empty if less than 3 characters
+    if (strlen($search_query) < 3) {
+        wp_send_json_success(array('posts' => array()));
+        return;
+    }
+    
+    // Query posts
+    $args = array(
+        'post_type' => 'post',
+        'post_status' => 'publish',
+        'posts_per_page' => 10,
+        's' => $search_query,
+        'orderby' => 'relevance'
+    );
+    
+    $query = new WP_Query($args);
+    $results = array();
+    
+    if ($query->have_posts()) {
+        while ($query->have_posts()) {
+            $query->the_post();
+            $post_id = get_the_ID();
+            
+            // Get categories
+            $categories = get_the_category();
+            $category_names = array();
+            if (!empty($categories)) {
+                foreach ($categories as $category) {
+                    $category_names[] = array(
+                        'name' => $category->name,
+                        'slug' => $category->slug
+                    );
+                }
+            }
+            
+            // Get post title from JSON if available
+            $json_data = get_post_meta($post_id, 'kiosk_chatgpt_json', true);
+            $data = json_decode($json_data, true);
+            $post_title = !empty($data['post_title']) ? $data['post_title'] : get_the_title();
+            
+            $results[] = array(
+                'id' => $post_id,
+                'title' => $post_title,
+                'url' => get_permalink(),
+                'categories' => $category_names
+            );
+        }
+        wp_reset_postdata();
+    }
+    
+    wp_send_json_success(array('posts' => $results));
+}
+add_action('wp_ajax_kiosk_search_posts', 'kiosk_ajax_search_posts');
+add_action('wp_ajax_nopriv_kiosk_search_posts', 'kiosk_ajax_search_posts');
+
+/**
+ * Localize script with AJAX URL and nonce
+ */
+function kiosk_localize_search_script() {
+    wp_localize_script('kiosk-main', 'kioskSearch', array(
+        'ajaxurl' => admin_url('admin-ajax.php'),
+        'nonce' => wp_create_nonce('kiosk_search_nonce')
+    ));
+}
+add_action('wp_enqueue_scripts', 'kiosk_localize_search_script');
 ?>

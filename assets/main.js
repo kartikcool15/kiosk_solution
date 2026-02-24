@@ -62,6 +62,96 @@
         }
         
 
+        /**
+         * Dynamic Post Search
+         */
+        var searchTimeout;
+        var $searchInput = $('#post-search');
+        var $searchResults = $('#search-results');
+        
+        if ($searchInput.length) {
+            // Handle input changes with debounce
+            $searchInput.on('input', function() {
+                clearTimeout(searchTimeout);
+                var searchQuery = $(this).val().trim();
+                
+                // Clear results if less than 3 characters
+                if (searchQuery.length < 3) {
+                    $searchResults.hide().empty();
+                    return;
+                }
+                
+                // Show loading state
+                $searchResults.html('<div class="search-loading">Searching...</div>').show();
+                
+                // Debounce the search request
+                searchTimeout = setTimeout(function() {
+                    performSearch(searchQuery);
+                }, 300);
+            });
+            
+            // Close dropdown when clicking outside
+            $(document).on('click', function(e) {
+                if (!$(e.target).closest('.search-container').length) {
+                    $searchResults.hide();
+                }
+            });
+            
+            // Prevent form submission
+            $searchInput.on('keydown', function(e) {
+                if (e.keyCode === 13) {
+                    e.preventDefault();
+                }
+            });
+        }
+        
+        function performSearch(query) {
+            $.ajax({
+                url: kioskSearch.ajaxurl,
+                type: 'POST',
+                data: {
+                    action: 'kiosk_search_posts',
+                    search: query,
+                    nonce: kioskSearch.nonce
+                },
+                success: function(response) {
+                    if (response.success && response.data.posts) {
+                        displaySearchResults(response.data.posts);
+                    } else {
+                        $searchResults.html('<div class="search-no-results">No results found</div>').show();
+                    }
+                },
+                error: function() {
+                    $searchResults.html('<div class="search-error">Search failed. Please try again.</div>').show();
+                }
+            });
+        }
+        
+        function displaySearchResults(posts) {
+            if (posts.length === 0) {
+                $searchResults.html('<div class="search-no-results">No results found</div>').show();
+                return;
+            }
+            
+            var html = '<div class="search-results-list">';
+            
+            posts.forEach(function(post) {
+                var categoryBadges = '';
+                if (post.categories && post.categories.length > 0) {
+                    post.categories.forEach(function(cat) {
+                        categoryBadges += '<span class="search-category-badge category-' + cat.slug + '">' + cat.name + '</span>';
+                    });
+                }
+                
+                html += '<a href="' + post.url + '" class="search-result-item">' +
+                        '<div class="search-result-title">' + post.title + '</div>' +
+                        '<div class="search-result-categories">' + categoryBadges + '</div>' +
+                        '</a>';
+            });
+            
+            html += '</div>';
+            $searchResults.html(html).show();
+        }
         
     });
     

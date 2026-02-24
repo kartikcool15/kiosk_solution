@@ -34,6 +34,11 @@
         <main class="main-content">
             <div class="topbar">
                 <div class="topbar-filters">
+                    <div class="search-container">
+                        <input type="search" id="post-search" class="post-search-input" placeholder="Search posts...">
+                        <div id="search-results" class="search-results-dropdown"></div>
+                    </div>
+                    
                     <select class="sidebar-dropdown-select" id="organization-dropdown">
                         <option value="">-- Choose Organization --</option>
                         <?php

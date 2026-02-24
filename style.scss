@@ -174,6 +174,155 @@ footer {
 			flex: 1;
 		}
 
+		// Search Container
+		.search-container {
+			position: relative;
+			width: 100%;
+			max-width: 400px;
+
+			.post-search-input {
+				width: 100%;
+				padding: 0.25rem 0.875rem;
+				background-color: #fff;
+				border: 1px solid $border-color;
+				border-radius: 8px;
+				color: #111;
+				font-size: 0.875rem;
+				font-weight: 500;
+				transition: all 0.3s ease;
+
+				&::placeholder {
+					color: #ccc;
+				}
+
+				&:focus {
+					outline: none;
+					border-color: #6347ea;
+					box-shadow: 0 0 0 3px rgba(99, 71, 234, 0.1);
+				}
+			}
+
+			.search-results-dropdown {
+				position: absolute;
+				top: calc(100% + 0.25rem);
+				left: 0;
+				right: 0;
+				background-color: $main-bg;
+				border: 1px solid $border-color;
+				border-radius: 8px;
+				box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+				max-height: 300px;
+				overflow: hidden;
+				z-index: 1000;
+				display: none;
+
+				.search-results-list {
+					background-color: $main-bg;
+					max-height: 300px;
+					overflow-y: auto;
+					padding: 0.25rem;
+
+					&::-webkit-scrollbar {
+						width: 8px;
+					}
+
+					&::-webkit-scrollbar-track {
+						background: $sidebar-item-hover;
+						border-radius: 4px;
+					}
+
+					&::-webkit-scrollbar-thumb {
+						background: rgba($text-gray, 0.5);
+						border-radius: 4px;
+
+						&:hover {
+							background: rgba($text-gray, 0.8);
+						}
+					}
+				}
+
+				.search-result-item {
+					display: block;
+					padding: 0.625rem 0.875rem;
+					border-radius: 6px;
+					text-decoration: none;
+					transition: all 0.2s ease;
+					background-color: transparent;
+					cursor: pointer;
+					margin-bottom: 2px;
+
+					&:hover {
+						background-color: $sidebar-item-hover;
+						
+						.search-result-title {
+							color: $primary-color;
+						}
+					}
+
+					.search-result-title {
+						color: $text-white;
+						font-size: 0.875rem;
+						font-weight: 400;
+						margin-bottom: 0.5rem;
+						line-height: 1.4;
+						transition: color 0.2s ease;
+					}
+
+					.search-result-categories {
+						display: flex;
+						gap: 0.5rem;
+						flex-wrap: wrap;
+					}
+
+					.search-category-badge {
+						display: inline-block;
+						padding: 0.25rem 0.625rem;
+						background-color: rgba($primary-color, 0.15);
+						color: $primary-color;
+						border-radius: 12px;
+						font-size: 0.75rem;
+						font-weight: 600;
+						text-transform: uppercase;
+						letter-spacing: 0.3px;
+
+						&.category-latest-job {
+							background-color: rgba(33, 150, 243, 0.15);
+							color: #2196f3;
+						}
+
+						&.category-admission {
+							background-color: rgba(76, 175, 80, 0.15);
+							color: #4caf50;
+						}
+
+						&.category-admit-card {
+							background-color: rgba(255, 193, 7, 0.15);
+							color: #ffc107;
+						}
+
+						&.category-result {
+							background-color: rgba(156, 39, 176, 0.15);
+							color: #9c27b0;
+						}
+					}
+				}
+
+				.search-loading,
+				.search-no-results,
+				.search-error {
+					background-color: $main-bg;
+					color: $text-gray;
+					padding: 2rem 1rem;
+					text-align: center;
+					font-size: 0.875rem;
+				}
+
+				.search-error {
+					color: #f44336;
+				}
+			}
+		}
+
 		select {
 			padding: 0.25rem 1rem;
 			max-width: 400px;
