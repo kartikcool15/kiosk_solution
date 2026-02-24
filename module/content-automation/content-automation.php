@@ -279,50 +279,43 @@ class Kiosk_Content_Automation
             <div class="kiosk-field-group">
                 <label for="kiosk_start_date">Application Start Date</label>
                 <input type="text" id="kiosk_start_date" name="kiosk_start_date" 
-                       value="<?php echo esc_attr($start_date); ?>" placeholder="e.g., 15 March 2024">
-                <p class="description">Date is stored as plain text from the source</p>
+                       value="<?php echo esc_attr($start_date); ?>">
             </div>
 
             <div class="kiosk-field-group">
                 <label for="kiosk_last_date">Application Last Date</label>
                 <input type="text" id="kiosk_last_date" name="kiosk_last_date" 
-                       value="<?php echo esc_attr($last_date); ?>" placeholder="e.g., 30 March 2024">
-                <p class="description">Date is stored as plain text from the source</p>
+                       value="<?php echo esc_attr($last_date); ?>">
             </div>
 
             <div class="kiosk-field-group">
                 <label for="kiosk_exam_date">Exam Date</label>
                 <input type="text" id="kiosk_exam_date" name="kiosk_exam_date" 
-                       value="<?php echo esc_attr($exam_date); ?>" placeholder="e.g., 15 April 2024">
-                <p class="description">Date is stored as plain text from the source</p>
+                       value="<?php echo esc_attr($exam_date); ?>">
             </div>
 
             <div class="kiosk-field-group">
                 <label for="kiosk_admit_card_date">Admit Card Release Date</label>
                 <input type="text" id="kiosk_admit_card_date" name="kiosk_admit_card_date" 
-                       value="<?php echo esc_attr($admit_card_date); ?>" placeholder="e.g., 1 April 2024">
-                <p class="description">Date is stored as plain text from the source</p>
+                       value="<?php echo esc_attr($admit_card_date); ?>">
             </div>
 
             <div class="kiosk-field-group">
                 <label for="kiosk_result_date">Result Date</label>
                 <input type="text" id="kiosk_result_date" name="kiosk_result_date" 
-                       value="<?php echo esc_attr($result_date); ?>" placeholder="e.g., 1 May 2024">
-                <p class="description">Date is stored as plain text from the source</p>
+                       value="<?php echo esc_attr($result_date); ?>">
             </div>
 
             <div class="kiosk-field-group">
                 <label for="kiosk_counselling_date">Counselling Date</label>
                 <input type="text" id="kiosk_counselling_date" name="kiosk_counselling_date" 
-                       value="<?php echo esc_attr($counselling_date); ?>" placeholder="e.g., 10 May 2024">
-                <p class="description">Date is stored as plain text from the source</p>
+                       value="<?php echo esc_attr($counselling_date); ?>">
             </div>
 
             <div class="kiosk-field-group">
                 <label for="kiosk_interview_date">Interview Date</label>
                 <input type="text" id="kiosk_interview_date" name="kiosk_interview_date" 
-                       value="<?php echo esc_attr($interview_date); ?>" placeholder="e.g., 20 May 2024">
-                <p class="description">Date is stored as plain text from the source</p>
+                       value="<?php echo esc_attr($interview_date); ?>">
             </div>
         </div>
 
