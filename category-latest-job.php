@@ -56,20 +56,20 @@ if ($all_posts_query->have_posts()) :
             $active_status = 'Application Closed';
             $status_class = 'status-completed';
             $status_priority = 5; // Lowest priority
-        } elseif ($last_timestamp && $last_timestamp >= $today_start && $last_timestamp < ($today_start + 7 * 24 * 60 * 60)) {
-            // Last date is today or within the next 7 days (ending soon)
-            $active_status = 'Ending Soon';
-            $status_class = 'status-ending';
-            $status_priority = 1; // Highest priority
-        } elseif ($start_timestamp && $start_timestamp >= $tomorrow_start) {
-            // Start date is tomorrow or later (upcoming)
-            $active_status = 'Upcoming';
-            $status_class = 'status-upcoming';
-            $status_priority = 2;
         } elseif ($start_timestamp && $start_timestamp >= ($today_start - 7 * 24 * 60 * 60) && $start_timestamp < $tomorrow_start) {
             // Start date was within the past 7 days or is today (new)
             $active_status = 'New';
             $status_class = 'status-new';
+            $status_priority = 1; // Highest priority
+        } elseif ($last_timestamp && $last_timestamp >= $today_start && $last_timestamp < $tomorrow_start) {
+            // Last date is today only (ending soon)
+            $active_status = 'Ending Soon';
+            $status_class = 'status-ending';
+            $status_priority = 2;
+        } elseif ($start_timestamp && $start_timestamp >= $tomorrow_start) {
+            // Start date is tomorrow or later (upcoming)
+            $active_status = 'Upcoming';
+            $status_class = 'status-upcoming';
             $status_priority = 3;
         } elseif ($start_timestamp && $start_timestamp < $today_start && $last_timestamp && $last_timestamp >= $today_start) {
             // Start date has passed and last date is today or in future (ongoing)
@@ -97,9 +97,9 @@ if ($all_posts_query->have_posts()) :
     wp_reset_postdata();
     
     // Sort posts by status priority and date
+    // New: sorted by start_date (most recent first)
     // Ending Soon: sorted by last_date (soonest first)
     // Upcoming: sorted by start_date (soonest first)
-    // New: sorted by start_date (most recent first)
     usort($posts_data, function($a, $b) {
         // First, sort by status priority
         if ($a['status_priority'] != $b['status_priority']) {
@@ -108,20 +108,20 @@ if ($all_posts_query->have_posts()) :
         
         // Within same priority, sort by date
         if ($a['status_priority'] == 1) {
-            // Ending Soon - sort by last_date ascending (soonest first)
-            $date_a = $a['last_timestamp'] ?: PHP_INT_MAX;
-            $date_b = $b['last_timestamp'] ?: PHP_INT_MAX;
-            return $date_a - $date_b;
-        } elseif ($a['status_priority'] == 2) {
-            // Upcoming - sort by start_date ascending (soonest first)
-            $date_a = $a['start_timestamp'] ?: PHP_INT_MAX;
-            $date_b = $b['start_timestamp'] ?: PHP_INT_MAX;
-            return $date_a - $date_b;
-        } elseif ($a['status_priority'] == 3) {
             // New - sort by start_date descending (most recent first)
             $date_a = $a['start_timestamp'] ?: 0;
             $date_b = $b['start_timestamp'] ?: 0;
             return $date_b - $date_a;
+        } elseif ($a['status_priority'] == 2) {
+            // Ending Soon - sort by last_date ascending (soonest first)
+            $date_a = $a['last_timestamp'] ?: PHP_INT_MAX;
+            $date_b = $b['last_timestamp'] ?: PHP_INT_MAX;
+            return $date_a - $date_b;
+        } elseif ($a['status_priority'] == 3) {
+            // Upcoming - sort by start_date ascending (soonest first)
+            $date_a = $a['start_timestamp'] ?: PHP_INT_MAX;
+            $date_b = $b['start_timestamp'] ?: PHP_INT_MAX;
+            return $date_a - $date_b;
         }
         
         return 0;
