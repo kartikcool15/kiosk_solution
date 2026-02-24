@@ -310,6 +310,11 @@ class Kiosk_Admin_Settings
                             </div>
 
                             <div class="status-item">
+                                <span class="label"><?php _e('Posts Updated:', 'kiosk'); ?></span>
+                                <span class="value"><?php echo isset($last_sync['updated']) ? intval($last_sync['updated']) : 0; ?></span>
+                            </div>
+
+                            <div class="status-item">
                                 <span class="label"><?php _e('Posts Skipped:', 'kiosk'); ?></span>
                                 <span class="value"><?php echo isset($last_sync['skipped']) ? intval($last_sync['skipped']) : 0; ?></span>
                             </div>

@@ -26,13 +26,6 @@ class Kiosk_Content_Automation
         // Register custom fields
         add_action('init', array($this, 'register_custom_fields'));
 
-        // Enable custom fields meta box
-        add_action('init', array($this, 'enable_custom_fields_metabox'));
-
-        // Add custom metabox for date fields
-        add_action('add_meta_boxes', array($this, 'add_dates_metabox'));
-        add_action('save_post', array($this, 'save_dates_metabox'));
-
         // Setup cron schedule
         add_filter('cron_schedules', array($this, 'custom_cron_schedules'));
 
@@ -157,147 +150,6 @@ class Kiosk_Content_Automation
     }
 
     /**
-     * Enable custom fields meta box visibility
-     */
-    public function enable_custom_fields_metabox()
-    {
-        add_post_type_support('post', 'custom-fields');
-
-        // Prevent ACF from hiding the default custom fields meta box
-        add_filter('acf/settings/remove_wp_meta_box', '__return_false');
-    }
-
-    /**
-     * Add custom metabox for date fields
-     */
-    public function add_dates_metabox()
-    {
-        add_meta_box(
-            'kiosk_dates_metabox',
-            'Important Dates',
-            array($this, 'render_dates_metabox'),
-            'post',
-            'side',
-            'high'
-        );
-    }
-
-    /**
-     * Render the dates metabox
-     */
-    public function render_dates_metabox($post)
-    {
-        // Add nonce for security
-        wp_nonce_field('kiosk_dates_metabox_nonce', 'kiosk_dates_metabox_nonce_field');
-
-        // Get current values
-        $start_date = get_post_meta($post->ID, 'kiosk_start_date', true);
-        $last_date = get_post_meta($post->ID, 'kiosk_last_date', true);
-        $exam_date = get_post_meta($post->ID, 'kiosk_exam_date', true);
-        $admit_card_date = get_post_meta($post->ID, 'kiosk_admit_card_date', true);
-        $result_date = get_post_meta($post->ID, 'kiosk_result_date', true);
-        $counselling_date = get_post_meta($post->ID, 'kiosk_counselling_date', true);
-        $interview_date = get_post_meta($post->ID, 'kiosk_interview_date', true);
-
-        // Display date fields
-        ?>
-        <style>
-            .kiosk-date-field {
-                margin-bottom: 15px;
-            }
-            .kiosk-date-field label {
-                display: block;
-                font-weight: 600;
-                margin-bottom: 5px;
-                font-size: 12px;
-            }
-            .kiosk-date-field input[type="date"] {
-                width: 100%;
-                padding: 5px;
-                border: 1px solid #ddd;
-                border-radius: 3px;
-            }
-        </style>
-        
-        <div class="kiosk-date-field">
-            <label for="kiosk_start_date">Start Date (Application Start)</label>
-            <input type="date" id="kiosk_start_date" name="kiosk_start_date" value="<?php echo esc_attr($start_date); ?>" />
-        </div>
-
-        <div class="kiosk-date-field">
-            <label for="kiosk_last_date">Last Date (Application End)</label>
-            <input type="date" id="kiosk_last_date" name="kiosk_last_date" value="<?php echo esc_attr($last_date); ?>" />
-        </div>
-
-        <div class="kiosk-date-field">
-            <label for="kiosk_exam_date">Exam Date</label>
-            <input type="date" id="kiosk_exam_date" name="kiosk_exam_date" value="<?php echo esc_attr($exam_date); ?>" />
-        </div>
-
-        <div class="kiosk-date-field">
-            <label for="kiosk_admit_card_date">Admit Card Date</label>
-            <input type="date" id="kiosk_admit_card_date" name="kiosk_admit_card_date" value="<?php echo esc_attr($admit_card_date); ?>" />
-        </div>
-
-        <div class="kiosk-date-field">
-            <label for="kiosk_result_date">Result Date</label>
-            <input type="date" id="kiosk_result_date" name="kiosk_result_date" value="<?php echo esc_attr($result_date); ?>" />
-        </div>
-
-        <div class="kiosk-date-field">
-            <label for="kiosk_counselling_date">Counselling Date</label>
-            <input type="date" id="kiosk_counselling_date" name="kiosk_counselling_date" value="<?php echo esc_attr($counselling_date); ?>" />
-        </div>
-
-        <div class="kiosk-date-field">
-            <label for="kiosk_interview_date">Interview Date</label>
-            <input type="date" id="kiosk_interview_date" name="kiosk_interview_date" value="<?php echo esc_attr($interview_date); ?>" />
-        </div>
-        <?php
-    }
-
-    /**
-     * Save the dates metabox data
-     */
-    public function save_dates_metabox($post_id)
-    {
-        // Check nonce
-        if (!isset($_POST['kiosk_dates_metabox_nonce_field']) || 
-            !wp_verify_nonce($_POST['kiosk_dates_metabox_nonce_field'], 'kiosk_dates_metabox_nonce')) {
-            return;
-        }
-
-        // Check autosave
-        if (defined('DOING_AUTOSAVE') && DOING_AUTOSAVE) {
-            return;
-        }
-
-        // Check permissions
-        if (!current_user_can('edit_post', $post_id)) {
-            return;
-        }
-
-        // Save date fields
-        $date_fields = array(
-            'kiosk_start_date',
-            'kiosk_last_date',
-            'kiosk_exam_date',
-            'kiosk_admit_card_date',
-            'kiosk_result_date',
-            'kiosk_counselling_date',
-            'kiosk_interview_date'
-        );
-
-        foreach ($date_fields as $field) {
-            if (isset($_POST[$field])) {
-                update_post_meta($post_id, $field, sanitize_text_field($_POST[$field]));
-            } else {
-                delete_post_meta($post_id, $field);
-            }
-        }
-    }
-
-    /**
      * Add custom cron schedules
      */
     public function custom_cron_schedules($schedules)
@@ -324,7 +176,7 @@ class Kiosk_Content_Automation
     /**
      * Fetch posts from external API
      */
-    private function fetch_posts_from_api($page = 1, $per_page = 10, $categories = array())
+    private function fetch_posts_from_api($page = 1, $per_page = 10, $categories = array(), $modified_after = '')
     {
         $args = array(
             'page' => $page,
@@ -336,6 +188,11 @@ class Kiosk_Content_Automation
         // Add category filter if provided
         if (!empty($categories) && is_array($categories)) {
             $args['categories'] = implode(',', $categories);
+        }
+
+        // Add modified_after filter if provided
+        if (!empty($modified_after)) {
+            $args['modified_after'] = $modified_after;
         }
 
         $url = add_query_arg($args, $this->get_api_base_url() . '/posts');
@@ -368,86 +225,6 @@ class Kiosk_Content_Automation
         }
 
         return $posts;
-    }
-
-    /**
-     * Extract custom field data from post content
-     * Returns array with 'fields' (empty) and 'chatgpt_json' for JSON data
-     */
-    private function extract_custom_fields($post_data)
-    {
-        // Check if ChatGPT processing is enabled
-        $settings = get_option('kiosk_automation_settings', array());
-        $openai_enabled = isset($settings['openai_enabled']) && $settings['openai_enabled'];
-
-        if ($openai_enabled) {
-            // Try ChatGPT processing
-            $chatgpt_result = $this->process_with_chatgpt($post_data);
-            if ($chatgpt_result !== false && is_array($chatgpt_result)) {
-                return array(
-                    'fields' => array(), // Empty - not used anymore
-                    'chatgpt_json' => $chatgpt_result['full_json']
-                );
-            }
-            // If ChatGPT fails, fall through to prepared JSON
-        }
-
-        // Fallback: Use prepared JSON without ChatGPT
-        $prepared_json = $this->prepare_post_json($post_data);
-
-        return array(
-            'fields' => array(), // Empty - not used anymore
-            'chatgpt_json' => $prepared_json
-        );
-    }
-
-    /**
-     * Process post data through ChatGPT API
-     * Returns array with 'fields' for mapped data and 'full_json' for complete ChatGPT response
-     */
-    private function process_with_chatgpt($post_data)
-    {
-        $settings = get_option('kiosk_automation_settings', array());
-        $api_key = isset($settings['openai_api_key']) ? trim($settings['openai_api_key']) : '';
-        $model = isset($settings['openai_model']) ? $settings['openai_model'] : 'gpt-4o';
-
-        if (empty($api_key)) {
-            error_log('Kiosk Automation: OpenAI API key not configured');
-            return false;
-        }
-
-        // Read prompt files
-        $system_prompt = $this->read_prompt_file('system-prompt.txt');
-        $user_prompt_template = $this->read_prompt_file('user-prompt.txt');
-
-        if (!$system_prompt || !$user_prompt_template) {
-            error_log('Kiosk Automation: Prompt files not found');
-            return false;
-        }
-
-        // Prepare post JSON
-        $post_json = $this->prepare_post_json($post_data);
-        if (!$post_json) {
-            error_log('Kiosk Automation: Failed to prepare post JSON');
-            return false;
-        }
-
-        // Replace placeholder in user prompt
-        $user_prompt = str_replace('[PASTE CLEANED JSON HERE]', $post_json, $user_prompt_template);
-
-        // Call OpenAI API
-        $response = $this->call_openai_api($api_key, $model, $system_prompt, $user_prompt);
-
-        if (!$response) {
-            error_log('Kiosk Automation: OpenAI API call failed');
-            return false;
-        }
-
-        // Return the full JSON response
-        return array(
-            'fields' => array(), // Empty fields array (not used anymore)
-            'full_json' => $response // Store the complete ChatGPT JSON response
-        );
     }
 
     /**
@@ -551,7 +328,7 @@ class Kiosk_Content_Automation
             $pattern,
             function ($matches) {
                 $url = trim($matches[1]);
-                
+
                 // Skip excluded URLs (WhatsApp, Telegram, SarkariResult)
                 if ($this->should_exclude_url($url)) {
                     return ''; // Remove the link entirely
@@ -577,375 +354,6 @@ class Kiosk_Content_Automation
     }
 
     /**
-     * Extract "as on" date from content
-     */
-    private function extract_as_on_date($content)
-    {
-        $text = wp_strip_all_tags($content);
-
-        // Look for patterns like "as on DD/MM/YYYY" or "as on DD-MM-YYYY"
-        if (preg_match('/as\s+on[:\s]+([0-9]{1,2}[\/\-][0-9]{1,2}[\/\-][0-9]{2,4})/i', $text, $matches)) {
-            return trim($matches[1]);
-        }
-
-        return '';
-    }
-
-    /**
-     * Extract links and FAQs from HTML containing multiple tables
-     * Returns array with 'links' and 'faqs' keys
-     */
-    private function extract_links_from_html($html)
-    {
-        if (empty($html)) {
-            return array('links' => '', 'faqs' => '');
-        }
-
-        $result = array('links' => array(), 'faqs' => array());
-
-        // Split by table tags to separate multiple tables
-        preg_match_all('/<table[^>]*>(.*?)<\/table>/is', $html, $tables, PREG_SET_ORDER);
-
-        if (!empty($tables)) {
-            // Process first table for links
-            if (isset($tables[0][1])) {
-                $first_table = $tables[0][1];
-                preg_match_all('/<tr[^>]*>.*?<td[^>]*>(.*?)<\/td>.*?<td[^>]*>.*?<a[^>]*href=["\']([^"\']*)["\'][^>]*>.*?<\/a>.*?<\/td>.*?<\/tr>/is', $first_table, $link_matches, PREG_SET_ORDER);
-
-                foreach ($link_matches as $match) {
-                    $title = wp_strip_all_tags($match[1]);
-                    $title = html_entity_decode($title, ENT_QUOTES | ENT_HTML5, 'UTF-8');
-                    $title = trim($title);
-                    $url = trim($match[2]);
-
-                    // Skip excluded URLs (WhatsApp, Telegram, SarkariResult)
-                    if ($this->should_exclude_url($url)) {
-                        continue;
-                    }
-
-                    if (!empty($url) && !empty($title)) {
-                        $result['links'][] = array(
-                            'title' => $title,
-                            'url' => $url
-                        );
-                    }
-                }
-            }
-
-            // Process second table for Q&A if exists
-            if (isset($tables[1][1])) {
-                $second_table = $tables[1][1];
-
-                // Extract Q&A pairs
-                preg_match_all('/<li[^>]*>.*?<strong[^>]*>Question:<\/strong>(.*?)<\/li>.*?<li[^>]*>.*?<strong[^>]*>Answer:?<\/strong>(.*?)<\/li>/is', $second_table, $qa_matches, PREG_SET_ORDER);
-
-                foreach ($qa_matches as $match) {
-                    $question = wp_strip_all_tags($match[1]);
-                    $question = html_entity_decode($question, ENT_QUOTES | ENT_HTML5, 'UTF-8');
-                    $question = trim($question);
-
-                    $answer = wp_strip_all_tags($match[2]);
-                    $answer = html_entity_decode($answer, ENT_QUOTES | ENT_HTML5, 'UTF-8');
-                    $answer = trim($answer);
-
-                    if (!empty($question) && !empty($answer)) {
-                        $result['faqs'][] = array(
-                            'question' => $question,
-                            'answer' => $answer
-                        );
-                    }
-                }
-            }
-        } else {
-            // Fallback: Match all anchor tags directly
-            preg_match_all('/<a[^>]*href=["\']([^"\']*)["\'][^>]*>(.*?)<\/a>/is', $html, $matches, PREG_SET_ORDER);
-
-            foreach ($matches as $match) {
-                $url = trim($match[1]);
-                
-                // Skip excluded URLs (WhatsApp, Telegram, SarkariResult)
-                if ($this->should_exclude_url($url)) {
-                    continue;
-                }
-
-                $title = wp_strip_all_tags($match[2]);
-                $title = html_entity_decode($title, ENT_QUOTES | ENT_HTML5, 'UTF-8');
-                $title = trim($title);
-
-                if (!empty($url) && !empty($title)) {
-                    $result['links'][] = array(
-                        'title' => $title,
-                        'url' => $url
-                    );
-                }
-            }
-        }
-
-        // Return empty strings if no data found
-        if (empty($result['links'])) {
-            $result['links'] = '';
-        }
-        if (empty($result['faqs'])) {
-            $result['faqs'] = '';
-        }
-
-        return $result;
-    }
-
-    /**
-     * Extract dates from HTML list structure
-     * Returns array of objects with event and date
-     */
-    private function extract_dates_from_html($html)
-    {
-        if (empty($html)) {
-            return '';
-        }
-
-        $dates = array();
-
-        // Match all list items
-        preg_match_all('/<li[^>]*>(.*?)<\/li>/is', $html, $matches);
-
-        if (!empty($matches[1])) {
-            foreach ($matches[1] as $item) {
-                // Strip all HTML tags but preserve the text
-                $text = wp_strip_all_tags($item);
-                $text = html_entity_decode($text, ENT_QUOTES | ENT_HTML5, 'UTF-8');
-                $text = trim($text);
-
-                // Skip empty items
-                if (empty($text)) {
-                    continue;
-                }
-
-                // Split by colon to separate event and date
-                if (strpos($text, ':') !== false) {
-                    $parts = explode(':', $text, 2);
-                    $event = trim($parts[0]);
-                    $date = isset($parts[1]) ? trim($parts[1]) : '';
-
-                    if (!empty($event) && !empty($date)) {
-                        $dates[] = array(
-                            'event' => $event,
-                            'date' => $date
-                        );
-                    }
-                } else {
-                    // If no colon, store as single event
-                    $dates[] = array(
-                        'event' => $text,
-                        'date' => ''
-                    );
-                }
-            }
-        }
-
-        // Return empty string if no dates found
-        if (empty($dates)) {
-            return '';
-        }
-
-        return $dates;
-    }
-
-    /**
-     * Extract vacancy details from HTML containing multiple tables
-     * Returns structured data with posts, eligibility, instructions, and selection mode
-     */
-    private function extract_vacancy_details_from_html($html)
-    {
-        if (empty($html)) {
-            return '';
-        }
-
-        $result = array(
-            'posts' => array(),
-            'eligibility' => array(),
-            'download_instructions' => array(),
-            'selection_mode' => array()
-        );
-
-        // Split by table tags to separate multiple tables
-        preg_match_all('/<table[^>]*>(.*?)<\/table>/is', $html, $tables, PREG_SET_ORDER);
-
-        if (!empty($tables)) {
-            // Process first table for vacancy posts and counts
-            if (isset($tables[0][1])) {
-                $first_table = $tables[0][1];
-
-                // Extract all rows
-                preg_match_all('/<tr[^>]*>(.*?)<\/tr>/is', $first_table, $rows, PREG_SET_ORDER);
-
-                $is_header = true;
-                foreach ($rows as $row) {
-                    // Extract all cells from this row
-                    preg_match_all('/<t[dh][^>]*>(.*?)<\/t[dh]>/is', $row[1], $cells);
-
-                    if (empty($cells[1]) || count($cells[1]) < 2) {
-                        continue;
-                    }
-
-                    // Skip header row
-                    if ($is_header) {
-                        $is_header = false;
-                        continue;
-                    }
-
-                    $post_name = wp_strip_all_tags($cells[1][0]);
-                    $post_name = html_entity_decode($post_name, ENT_QUOTES | ENT_HTML5, 'UTF-8');
-                    $post_name = trim($post_name);
-
-                    $post_count = wp_strip_all_tags($cells[1][1]);
-                    $post_count = html_entity_decode($post_count, ENT_QUOTES | ENT_HTML5, 'UTF-8');
-                    $post_count = trim($post_count);
-
-                    // Extract link from third column if exists
-                    $details_link = '';
-                    if (isset($cells[1][2]) && preg_match('/<a[^>]*href=["\']([^"\']*)["\'][^>]*>/i', $cells[1][2], $link_match)) {
-                        $details_link = trim($link_match[1]);
-                    }
-
-                    if (!empty($post_name)) {
-                        $result['posts'][] = array(
-                            'name' => $post_name,
-                            'count' => $post_count,
-                            'details_link' => $details_link
-                        );
-                    }
-                }
-            }
-
-            // Process second table for eligibility criteria
-            if (isset($tables[1][1])) {
-                $second_table = $tables[1][1];
-
-                // Extract all rows
-                preg_match_all('/<tr[^>]*>(.*?)<\/tr>/is', $second_table, $rows, PREG_SET_ORDER);
-
-                $is_header = true;
-                foreach ($rows as $row) {
-                    // Extract all cells from this row
-                    preg_match_all('/<t[dh][^>]*>(.*?)<\/t[dh]>/is', $row[1], $cells);
-
-                    if (empty($cells[1]) || count($cells[1]) < 2) {
-                        continue;
-                    }
-
-                    // Skip header row
-                    if ($is_header) {
-                        $is_header = false;
-                        continue;
-                    }
-
-                    $post_name = wp_strip_all_tags($cells[1][0]);
-                    $post_name = html_entity_decode($post_name, ENT_QUOTES | ENT_HTML5, 'UTF-8');
-                    $post_name = trim($post_name);
-
-                    // Extract criteria from list items in second column
-                    $criteria = array();
-                    preg_match_all('/<li[^>]*>(.*?)<\/li>/is', $cells[1][1], $li_matches);
-                    foreach ($li_matches[1] as $li_content) {
-                        $criterion = wp_strip_all_tags($li_content);
-                        $criterion = html_entity_decode($criterion, ENT_QUOTES | ENT_HTML5, 'UTF-8');
-                        $criterion = trim($criterion);
-                        if (!empty($criterion)) {
-                            $criteria[] = $criterion;
-                        }
-                    }
-
-                    // If no list items found, treat entire cell content as single criterion
-                    if (empty($criteria)) {
-                        $criterion = wp_strip_all_tags($cells[1][1]);
-                        $criterion = html_entity_decode($criterion, ENT_QUOTES | ENT_HTML5, 'UTF-8');
-                        $criterion = trim($criterion);
-                        if (!empty($criterion)) {
-                            $criteria[] = $criterion;
-                        }
-                    }
-
-                    if (!empty($post_name) && !empty($criteria)) {
-                        $result['eligibility'][] = array(
-                            'post' => $post_name,
-                            'criteria' => $criteria
-                        );
-                    }
-                }
-            }
-
-            // Process third table for download instructions
-            if (isset($tables[2][1])) {
-                $third_table = $tables[2][1];
-                preg_match_all('/<li[^>]*>(.*?)<\/li>/is', $third_table, $instruction_matches);
-                foreach ($instruction_matches[1] as $instruction) {
-                    $text = wp_strip_all_tags($instruction);
-                    $text = html_entity_decode($text, ENT_QUOTES | ENT_HTML5, 'UTF-8');
-                    $text = trim($text);
-                    if (!empty($text)) {
-                        $result['download_instructions'][] = $text;
-                    }
-                }
-            }
-
-            // Process fourth table for selection mode
-            if (isset($tables[3][1])) {
-                $fourth_table = $tables[3][1];
-                preg_match_all('/<li[^>]*>(.*?)<\/li>/is', $fourth_table, $mode_matches);
-                foreach ($mode_matches[1] as $mode) {
-                    $text = wp_strip_all_tags($mode);
-                    $text = html_entity_decode($text, ENT_QUOTES | ENT_HTML5, 'UTF-8');
-                    $text = trim($text);
-                    if (!empty($text)) {
-                        $result['selection_mode'][] = $text;
-                    }
-                }
-            }
-        }
-
-        // Return empty strings for empty arrays
-        if (empty($result['posts'])) {
-            $result['posts'] = '';
-        }
-        if (empty($result['eligibility'])) {
-            $result['eligibility'] = '';
-        }
-        if (empty($result['download_instructions'])) {
-            $result['download_instructions'] = '';
-        }
-        if (empty($result['selection_mode'])) {
-            $result['selection_mode'] = '';
-        }
-
-        return $result;
-    }
-
-    /**
-     * Clean post title by removing common suffixes
-     */
-    private function clean_title($title)
-    {
-        // Remove common suffixes that are added to source titles
-        $patterns_to_remove = array(
-            '/\s*[-–—]\s*Start\s*$/i',
-            '/\s*[-–—]\s*Out\s*$/i',
-            '/\s*[-–—]\s*Last Date Today\s*$/i',
-            '/\s*[-–—]\s*Last Date\s*$/i',
-            '/\s*[-–—]\s*Extended\s*$/i',
-            '/\s*[-–—]\s*Live\s*$/i',
-            '/\s*[-–—]\s*Apply Now\s*$/i',
-            '/\s*[-–—]\s*Apply Online\s*$/i',
-            '/\s*[-–—]\s*Online Form\s*$/i',
-        );
-
-        $cleaned_title = $title;
-        foreach ($patterns_to_remove as $pattern) {
-            $cleaned_title = preg_replace($pattern, '', $cleaned_title);
-        }
-
-        return trim($cleaned_title);
-    }
-
-    /**
      * Prepare post data as clean JSON for ChatGPT with custom field mappings
      */
     private function prepare_post_json($post_data)
@@ -962,7 +370,7 @@ class Kiosk_Content_Automation
         } else {
             $raw_title = isset($post_data['title']['rendered']) ? wp_strip_all_tags($post_data['title']['rendered']) : '';
         }
-        $clean_data['title'] = $this->clean_title($raw_title);
+        $clean_data['title'] = trim($raw_title);
 
         // Check if ACF data exists - send ALL ACF fields to ChatGPT
         if (isset($post_data['acf']) && is_array($post_data['acf']) && !empty($post_data['acf'])) {
@@ -1306,7 +714,7 @@ class Kiosk_Content_Automation
         }
 
         $dates = $chatgpt_data['dates'];
-        
+
         // Only update custom fields if they don't already have a value (prioritize manual edits)
         if (!get_post_meta($post_id, 'kiosk_start_date', true) && !empty($dates['start_date'])) {
             update_post_meta($post_id, 'kiosk_start_date', sanitize_text_field($dates['start_date']));
@@ -1463,7 +871,16 @@ class Kiosk_Content_Automation
             $categories = isset($settings['source_categories']) ? $settings['source_categories'] : array();
         }
 
-        $posts = $this->fetch_posts_from_api(1, $per_page, $categories);
+        // Get last sync timestamp for modified_after parameter
+        $last_sync_data = get_option('kiosk_last_sync', array());
+        $modified_after = '';
+
+        // Use last successful sync timestamp in ISO 8601 format
+        if (isset($last_sync_data['timestamp_iso'])) {
+            $modified_after = $last_sync_data['timestamp_iso'];
+        }
+
+        $posts = $this->fetch_posts_from_api(1, $per_page, $categories, $modified_after);
 
         if (!$posts || !is_array($posts)) {
             error_log('Kiosk: No posts fetched from API');
@@ -1471,6 +888,7 @@ class Kiosk_Content_Automation
         }
 
         $imported_count = 0;
+        $updated_count = 0;
         $skipped_count = 0;
         $queued_for_processing = 0;
 
@@ -1478,8 +896,13 @@ class Kiosk_Content_Automation
             $source_post_id = $post_data['id'];
 
             // Check if post already exists
-            if ($this->post_exists_by_source_id($source_post_id)) {
-                $skipped_count++;
+            $existing_post_id = $this->post_exists_by_source_id($source_post_id);
+
+            if ($existing_post_id) {
+                // Post exists - UPDATE it with new data
+                $this->update_existing_post($existing_post_id, $post_data);
+                $updated_count++;
+                $queued_for_processing++;
                 continue;
             }
 
@@ -1498,9 +921,6 @@ class Kiosk_Content_Automation
                 $featured_image_id = $this->download_and_attach_image($image_url, $title_to_use);
             }
 
-            // Clean and prepare title
-            $clean_title = $this->clean_title($title_to_use);
-
             // Prepare post date - use source post date if available
             $post_date = '';
             $post_date_gmt = '';
@@ -1513,7 +933,7 @@ class Kiosk_Content_Automation
 
             // Create the post as draft (will publish after ChatGPT processing)
             $post_data_array = array(
-                'post_title' => sanitize_text_field($clean_title),
+                'post_title' => sanitize_text_field($title_to_use),
                 'post_content' => wp_kses_post($post_data['content']['rendered']),
                 'post_excerpt' => isset($post_data['excerpt']['rendered']) ? wp_kses_post($post_data['excerpt']['rendered']) : '',
                 'post_status' => 'draft', // Keep as draft until ChatGPT processes it
@@ -1555,13 +975,59 @@ class Kiosk_Content_Automation
             $this->schedule_chatgpt_processing();
         }
 
-        // Log the results
+        // Log the results with current timestamp in ISO 8601 format
         update_option('kiosk_last_sync', array(
             'time' => current_time('mysql'),
+            'timestamp_iso' => current_time('c'), // ISO 8601 format for API
             'imported' => $imported_count,
+            'updated' => $updated_count,
             'skipped' => $skipped_count,
             'queued_for_chatgpt' => $queued_for_processing
         ));
+    }
+
+    /**
+     * Update existing post with fresh data from API
+     */
+    private function update_existing_post($post_id, $post_data)
+    {
+        // Prepare JSON for ChatGPT processing
+        $prepared_json = $this->prepare_post_json($post_data);
+
+        // Use ACF post_title if available
+        $title_to_use = isset($post_data['acf']['post_title']) && !empty($post_data['acf']['post_title'])
+            ? $post_data['acf']['post_title']
+            : $post_data['title']['rendered'];
+
+        // Update the post content and title
+        $update_data = array(
+            'ID' => $post_id,
+            'post_title' => sanitize_text_field($title_to_use),
+            'post_content' => wp_kses_post($post_data['content']['rendered']),
+            'post_excerpt' => isset($post_data['excerpt']['rendered']) ? wp_kses_post($post_data['excerpt']['rendered']) : '',
+            'post_status' => 'draft', // Back to draft for re-processing
+            'post_category' => $this->map_categories($post_data['categories']),
+        );
+
+        wp_update_post($update_data);
+
+        // Update featured image if available
+        if (isset($post_data['_embedded']['wp:featuredmedia'][0]['source_url'])) {
+            $image_url = $post_data['_embedded']['wp:featuredmedia'][0]['source_url'];
+            $featured_image_id = $this->download_and_attach_image($image_url, $title_to_use);
+            if ($featured_image_id > 0) {
+                set_post_thumbnail($post_id, $featured_image_id);
+            }
+        }
+
+        // Update meta: raw data for ChatGPT processing
+        update_post_meta($post_id, 'kiosk_raw_post_data', $prepared_json);
+        update_post_meta($post_id, 'kiosk_processing_status', 'pending');
+
+        // Clear old ChatGPT data to force re-processing
+        delete_post_meta($post_id, 'kiosk_chatgpt_json');
+
+        return true;
     }
 
     /**
@@ -1657,11 +1123,11 @@ class Kiosk_Content_Automation
 
                 // Decode ChatGPT result to extract post_title
                 $chatgpt_data = json_decode($chatgpt_result, true);
-                
+
                 // Update post title and slug from ChatGPT response
                 if (!empty($chatgpt_data['post_title'])) {
                     $new_title = sanitize_text_field($chatgpt_data['post_title']);
-                    
+
                     wp_update_post(array(
                         'ID' => $post_id,
                         'post_title' => $new_title,
@@ -1864,7 +1330,7 @@ class Kiosk_Content_Automation
     {
         // Only show for posts that have a source post ID
         $source_post_id = get_post_meta($post->ID, 'kiosk_source_post_id', true);
-        
+
         if (!empty($source_post_id)) {
             $actions['kiosk_update'] = sprintf(
                 '<a href="#" class="kiosk-update-post" data-post-id="%d" data-source-id="%d">🔄 Update from Source</a>',
@@ -1872,7 +1338,7 @@ class Kiosk_Content_Automation
                 $source_post_id
             );
         }
-        
+
         return $actions;
     }
 
@@ -1885,68 +1351,68 @@ class Kiosk_Content_Automation
         if ($screen->id !== 'edit-post') {
             return;
         }
-        
-        ?>
+
+    ?>
         <script type="text/javascript">
-        jQuery(document).ready(function($) {
-            $('.kiosk-update-post').on('click', function(e) {
-                e.preventDefault();
-                
-                var $link = $(this);
-                var postId = $link.data('post-id');
-                var sourceId = $link.data('source-id');
-                var $row = $link.closest('tr');
-                
-                if ($link.hasClass('kiosk-updating')) {
-                    return;
-                }
-                
-                if (!confirm('Update this post from source ID ' + sourceId + '? This will fetch fresh data from the API and re-process with ChatGPT.')) {
-                    return;
-                }
-                
-                $link.addClass('kiosk-updating');
-                $link.text('🔄 Updating...');
-                
-                $.ajax({
-                    url: ajaxurl,
-                    type: 'POST',
-                    data: {
-                        action: 'kiosk_update_individual_post',
-                        post_id: postId,
-                        source_id: sourceId,
-                        nonce: '<?php echo wp_create_nonce('kiosk_update_post'); ?>'
-                    },
-                    success: function(response) {
-                        if (response.success) {
-                            $link.text('✅ Updated!');
-                            $link.css('color', '#46b450');
-                            
-                            // Update status column if exists
-                            var $statusCell = $row.find('.column-chatgpt_status');
-                            if ($statusCell.length) {
-                                $statusCell.html('<span class="chatgpt-status-pending">⏳ Pending</span>');
+            jQuery(document).ready(function($) {
+                $('.kiosk-update-post').on('click', function(e) {
+                    e.preventDefault();
+
+                    var $link = $(this);
+                    var postId = $link.data('post-id');
+                    var sourceId = $link.data('source-id');
+                    var $row = $link.closest('tr');
+
+                    if ($link.hasClass('kiosk-updating')) {
+                        return;
+                    }
+
+                    if (!confirm('Update this post from source ID ' + sourceId + '? This will fetch fresh data from the API and re-process with ChatGPT.')) {
+                        return;
+                    }
+
+                    $link.addClass('kiosk-updating');
+                    $link.text('🔄 Updating...');
+
+                    $.ajax({
+                        url: ajaxurl,
+                        type: 'POST',
+                        data: {
+                            action: 'kiosk_update_individual_post',
+                            post_id: postId,
+                            source_id: sourceId,
+                            nonce: '<?php echo wp_create_nonce('kiosk_update_post'); ?>'
+                        },
+                        success: function(response) {
+                            if (response.success) {
+                                $link.text('✅ Updated!');
+                                $link.css('color', '#46b450');
+
+                                // Update status column if exists
+                                var $statusCell = $row.find('.column-chatgpt_status');
+                                if ($statusCell.length) {
+                                    $statusCell.html('<span class="chatgpt-status-pending">⏳ Pending</span>');
+                                }
+
+                                setTimeout(function() {
+                                    location.reload();
+                                }, 1500);
+                            } else {
+                                alert('Error: ' + (response.data.message || 'Failed to update post'));
+                                $link.removeClass('kiosk-updating');
+                                $link.text('🔄 Update from Source');
                             }
-                            
-                            setTimeout(function() {
-                                location.reload();
-                            }, 1500);
-                        } else {
-                            alert('Error: ' + (response.data.message || 'Failed to update post'));
+                        },
+                        error: function() {
+                            alert('AJAX error occurred');
                             $link.removeClass('kiosk-updating');
                             $link.text('🔄 Update from Source');
                         }
-                    },
-                    error: function() {
-                        alert('AJAX error occurred');
-                        $link.removeClass('kiosk-updating');
-                        $link.text('🔄 Update from Source');
-                    }
+                    });
                 });
             });
-        });
         </script>
-        <?php
+<?php
     }
 
     /**
@@ -1955,66 +1421,65 @@ class Kiosk_Content_Automation
     public function update_individual_post_ajax()
     {
         check_ajax_referer('kiosk_update_post', 'nonce');
-        
+
         if (!current_user_can('edit_posts')) {
             wp_send_json_error(array('message' => 'Permission denied'));
         }
-        
+
         $post_id = isset($_POST['post_id']) ? intval($_POST['post_id']) : 0;
         $source_id = isset($_POST['source_id']) ? intval($_POST['source_id']) : 0;
-        
+
         if (!$post_id || !$source_id) {
             wp_send_json_error(array('message' => 'Invalid post ID or source ID'));
         }
-        
+
         // Fetch fresh data from API
         $url = add_query_arg(array(
             '_embed' => 1,
             'acf_format' => 'standard'
         ), $this->get_api_base_url() . '/posts/' . $source_id);
-        
+
         $response = wp_remote_get($url, array(
             'timeout' => 30,
             'sslverify' => false
         ));
-        
+
         if (is_wp_error($response)) {
             wp_send_json_error(array('message' => 'API Error: ' . $response->get_error_message()));
         }
-        
+
         $response_code = wp_remote_retrieve_response_code($response);
         if ($response_code !== 200) {
             wp_send_json_error(array('message' => 'API returned error code: ' . $response_code));
         }
-        
+
         $post_data = json_decode(wp_remote_retrieve_body($response), true);
-        
+
         if (!$post_data || !isset($post_data['id'])) {
             wp_send_json_error(array('message' => 'Failed to parse API response'));
         }
-        
+
         // Prepare new JSON
         $prepared_json = $this->prepare_post_json($post_data);
-        
+
         // Use ACF post_title if available
-        $title_to_use = isset($post_data['acf']['post_title']) && !empty($post_data['acf']['post_title']) 
-            ? $post_data['acf']['post_title'] 
+        $title_to_use = isset($post_data['acf']['post_title']) && !empty($post_data['acf']['post_title'])
+            ? $post_data['acf']['post_title']
             : $post_data['title']['rendered'];
-        $clean_title = $this->clean_title($title_to_use);
-        
+
         // Update post
         $update_result = wp_update_post(array(
             'ID' => $post_id,
-            'post_title' => sanitize_text_field($clean_title),
+            'post_title' => sanitize_text_field($title_to_use),
             'post_content' => wp_kses_post($post_data['content']['rendered']),
             'post_excerpt' => isset($post_data['excerpt']['rendered']) ? wp_kses_post($post_data['excerpt']['rendered']) : '',
             'post_status' => 'draft', // Back to draft for re-processing
         ));
-        
+
         if (is_wp_error($update_result)) {
             wp_send_json_error(array('message' => 'Failed to update post: ' . $update_result->get_error_message()));
         }
-        
+
         // Update featured image if available
         if (isset($post_data['_embedded']['wp:featuredmedia'][0]['source_url'])) {
             $image_url = $post_data['_embedded']['wp:featuredmedia'][0]['source_url'];
@@ -2023,17 +1488,17 @@ class Kiosk_Content_Automation
                 set_post_thumbnail($post_id, $featured_image_id);
             }
         }
-        
+
         // Update meta fields
         update_post_meta($post_id, 'kiosk_raw_post_data', $prepared_json);
         update_post_meta($post_id, 'kiosk_processing_status', 'pending');
-        
+
         // Clear old ChatGPT data
         delete_post_meta($post_id, 'kiosk_chatgpt_json');
-        
+
         // Schedule ChatGPT processing
         $this->schedule_chatgpt_processing();
-        
+
         wp_send_json_success(array(
             'message' => 'Post updated successfully and queued for ChatGPT processing',
             'post_id' => $post_id,
@@ -2070,7 +1535,7 @@ class Kiosk_Content_Automation
         foreach ($post_ids as $post_id) {
             // Get source post ID
             $source_id = get_post_meta($post_id, 'kiosk_source_post_id', true);
-            
+
             if (empty($source_id)) {
                 $skipped++;
                 continue;
@@ -2081,53 +1546,52 @@ class Kiosk_Content_Automation
                 '_embed' => 1,
                 'acf_format' => 'standard'
             ), $this->get_api_base_url() . '/posts/' . $source_id);
-            
+
             $response = wp_remote_get($url, array(
                 'timeout' => 30,
                 'sslverify' => false
             ));
-            
+
             if (is_wp_error($response)) {
                 $errors++;
                 continue;
             }
-            
+
             $response_code = wp_remote_retrieve_response_code($response);
             if ($response_code !== 200) {
                 $errors++;
                 continue;
             }
-            
+
             $post_data = json_decode(wp_remote_retrieve_body($response), true);
-            
+
             if (!$post_data || !isset($post_data['id'])) {
                 $errors++;
                 continue;
             }
-            
+
             // Prepare new JSON
             $prepared_json = $this->prepare_post_json($post_data);
-            
+
             // Use ACF post_title if available
-            $title_to_use = isset($post_data['acf']['post_title']) && !empty($post_data['acf']['post_title']) 
-                ? $post_data['acf']['post_title'] 
+            $title_to_use = isset($post_data['acf']['post_title']) && !empty($post_data['acf']['post_title'])
+                ? $post_data['acf']['post_title']
                 : $post_data['title']['rendered'];
-            $clean_title = $this->clean_title($title_to_use);
-            
+
             // Update post
             $update_result = wp_update_post(array(
                 'ID' => $post_id,
-                'post_title' => sanitize_text_field($clean_title),
+                'post_title' => sanitize_text_field($title_to_use),
                 'post_content' => wp_kses_post($post_data['content']['rendered']),
                 'post_excerpt' => isset($post_data['excerpt']['rendered']) ? wp_kses_post($post_data['excerpt']['rendered']) : '',
                 'post_status' => 'draft', // Back to draft for re-processing
             ));
-            
+
             if (is_wp_error($update_result)) {
                 $errors++;
                 continue;
             }
-            
+
             // Update featured image if available
             if (isset($post_data['_embedded']['wp:featuredmedia'][0]['source_url'])) {
                 $image_url = $post_data['_embedded']['wp:featuredmedia'][0]['source_url'];
@@ -2136,14 +1600,14 @@ class Kiosk_Content_Automation
                     set_post_thumbnail($post_id, $featured_image_id);
                 }
             }
-            
+
             // Update meta fields
             update_post_meta($post_id, 'kiosk_raw_post_data', $prepared_json);
             update_post_meta($post_id, 'kiosk_processing_status', 'pending');
-            
+
             // Clear old ChatGPT data
             delete_post_meta($post_id, 'kiosk_chatgpt_json');
-            
+
             $updated++;
         }
 
@@ -2177,11 +1641,11 @@ class Kiosk_Content_Automation
 
         printf(
             '<div class="notice notice-success is-dismissible"><p>'
-            . '<strong>Bulk Update Complete:</strong> '
-            . '%d post(s) updated and queued for ChatGPT processing. '
-            . '%d post(s) skipped (no source ID). '
-            . '%d error(s).'
-            . '</p></div>',
+                . '<strong>Bulk Update Complete:</strong> '
+                . '%d post(s) updated and queued for ChatGPT processing. '
+                . '%d post(s) skipped (no source ID). '
+                . '%d error(s).'
+                . '</p></div>',
             $updated,
             $skipped,
             $errors
@@ -2419,7 +1883,7 @@ class Kiosk_Content_Automation
 
                 // Get ChatGPT JSON
                 $chatgpt_json = get_post_meta($post_id, 'kiosk_chatgpt_json', true);
-                
+
                 if (empty($chatgpt_json)) {
                     $skipped_count++;
                     continue;
@@ -2427,7 +1891,7 @@ class Kiosk_Content_Automation
 
                 // Decode JSON
                 $chatgpt_data = json_decode($chatgpt_json, true);
-                
+
                 if (!is_array($chatgpt_data) || empty($chatgpt_data['post_title'])) {
                     $skipped_count++;
                     continue;
@@ -2449,7 +1913,7 @@ class Kiosk_Content_Automation
                 } else {
                     // Set organization taxonomy from ChatGPT JSON
                     $this->set_post_organization($post_id, $chatgpt_json);
-                    
+
                     $updated_count++;
                 }
             }
