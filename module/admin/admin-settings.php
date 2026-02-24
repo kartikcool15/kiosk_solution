@@ -335,11 +335,17 @@ class Kiosk_Admin_Settings
                         <button type="button" class="button button-secondary button-large" id="kiosk-fix-slugs">
                             <?php _e('Fix Post Slugs from ChatGPT', 'kiosk'); ?>
                         </button>
+
+                        <button type="button" class="button button-secondary button-large" id="kiosk-update-content">
+                            <?php _e('Update Post Content from ChatGPT', 'kiosk'); ?>
+                        </button>
                     </div>
 
                     <p class="description" style="margin-top: 10px;">
                         <strong><?php _e('Note:', 'kiosk'); ?></strong> 
                         <?php _e('The "Fix Post Slugs" button updates all posts with correct titles and URL slugs from their ChatGPT processed data. Use this if posts are missing proper URLs or have incorrect titles.', 'kiosk'); ?>
+                        <br>
+                        <?php _e('The "Update Post Content" button updates all posts with post_content_summary from their ChatGPT processed data. Use this to replace post content with the AI-generated summary.', 'kiosk'); ?>
                     </p>
 
                     <div id="kiosk-sync-response" class="kiosk-response" style="display:none;"></div>

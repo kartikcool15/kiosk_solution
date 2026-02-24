@@ -235,6 +235,86 @@
         });
         
         /**
+         * Update Post Content from ChatGPT post_content_summary
+         */
+        $('#kiosk-update-content').on('click', function(e) {
+            e.preventDefault();
+            
+            console.log('Update content button clicked');
+            
+            var $button = $(this);
+            var $response = $('#kiosk-sync-response');
+            
+            if (!confirm('This will update all posts with post_content_summary from ChatGPT data. This will replace the existing post content. Continue?')) {
+                console.log('User cancelled operation');
+                return;
+            }
+            
+            console.log('Starting AJAX request...');
+            
+            // Disable button and show loading
+            $button.prop('disabled', true);
+            $button.html('<span class="kiosk-spinner"></span> Updating Content...');
+            
+            // Show loading message
+            $response.removeClass('success error').addClass('loading').show();
+            $response.html('Updating post content from ChatGPT post_content_summary...');
+            
+            $.ajax({
+                url: kioskAdmin.ajax_url,
+                type: 'POST',
+                data: {
+                    action: 'kiosk_update_post_content_from_json',
+                    nonce: kioskAdmin.nonce
+                },
+                timeout: 120000, // 2 minute timeout for bulk updates
+                success: function(response) {
+                    console.log('AJAX Success:', response);
+                    
+                    $button.prop('disabled', false);
+                    $button.html('Update Post Content from ChatGPT');
+                    
+                    if (response.success) {
+                        $response.removeClass('loading error').addClass('success');
+                        
+                        var message = '<strong>Content Updated!</strong><br>';
+                        message += response.data.message + '<br>';
+                        message += 'Total posts checked: ' + response.data.total_checked + '<br>';
+                        message += 'Posts updated: ' + response.data.updated + '<br>';
+                        message += 'Posts skipped: ' + response.data.skipped + '<br>';
+                        if (response.data.errors > 0) {
+                            message += 'Errors: ' + response.data.errors;
+                        }
+                        
+                        $response.html(message);
+                        
+                        // Reload page after 3 seconds
+                        setTimeout(function() {
+                            location.reload();
+                        }, 3000);
+                    } else {
+                        $response.removeClass('loading success').addClass('error');
+                        $response.html('<strong>Error:</strong> ' + response.data);
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.log('AJAX Error:', status, error, xhr);
+                    
+                    $button.prop('disabled', false);
+                    $button.html('Update Post Content from ChatGPT');
+                    
+                    $response.removeClass('loading success').addClass('error');
+                    
+                    if (status === 'timeout') {
+                        $response.html('<strong>Timeout:</strong> The operation is taking longer than expected. Some posts may have been updated. Please refresh and try again if needed.');
+                    } else {
+                        $response.html('<strong>Error:</strong> ' + error + '<br>Status: ' + status);
+                    }
+                }
+            });
+        });
+        
+        /**
          * Auto-hide success messages after 5 seconds
          */
         $(document).on('DOMNodeInserted', '.kiosk-response.success', function() {
