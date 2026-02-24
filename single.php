@@ -11,6 +11,152 @@
 
         $category = get_the_category();
         $category_name = !empty($category) ? $category[0]->name : '';
+        $category_slug = !empty($category) ? $category[0]->slug : '';
+
+        // Build Schema Markup
+        $schema_markup = array();
+
+        // FAQ Schema - if FAQs exist
+        if (!empty($data['faqs']) && is_array($data['faqs'])) {
+            $faq_entities = array();
+            foreach ($data['faqs'] as $faq) {
+                if (!empty($faq['question']) && !empty($faq['answer'])) {
+                    $faq_entities[] = array(
+                        '@type' => 'Question',
+                        'name' => $faq['question'],
+                        'acceptedAnswer' => array(
+                            '@type' => 'Answer',
+                            'text' => $faq['answer']
+                        )
+                    );
+                }
+            }
+
+            if (!empty($faq_entities)) {
+                $schema_markup[] = array(
+                    '@context' => 'https://schema.org',
+                    '@type' => 'FAQPage',
+                    'mainEntity' => $faq_entities
+                );
+            }
+        }
+
+        // Job Posting Schema - only for latest-job category
+        if ($category_slug === 'latest-job') {
+            $job_schema = array(
+                '@context' => 'https://schema.org',
+                '@type' => 'JobPosting',
+                'title' => get_the_title(),
+                'description' => !empty($data['post_content_summary']) ? wp_strip_all_tags($data['post_content_summary']) : get_the_excerpt(),
+                'datePosted' => get_the_date('c'),
+            );
+
+            // Add hiring organization
+            if (!empty($organization)) {
+                $job_schema['hiringOrganization'] = array(
+                    '@type' => 'Organization',
+                    'name' => $organization
+                );
+            }
+
+            // Add valid through date (last date to apply)
+            if (!empty($data['dates']['last_date'])) {
+                // Try to convert the date to ISO format
+                $last_date_timestamp = strtotime($data['dates']['last_date']);
+                if ($last_date_timestamp) {
+                    $job_schema['validThrough'] = date('c', $last_date_timestamp);
+                }
+            }
+
+            // Add job location - default to India, or extract from data if available
+            $job_location = 'India';
+            if (!empty($data['job_location'])) {
+                $job_location = $data['job_location'];
+            } elseif (!empty($data['state'])) {
+                $job_location = $data['state'] . ', India';
+            }
+
+            $job_schema['jobLocation'] = array(
+                '@type' => 'Place',
+                'address' => array(
+                    '@type' => 'PostalAddress',
+                    'addressCountry' => 'IN',
+                    'addressLocality' => $job_location
+                )
+            );
+
+            // Add employment type
+            $employment_type = 'FULL_TIME'; // Default
+            if (!empty($data['employment_type'])) {
+                $job_schema['employmentType'] = strtoupper(str_replace(' ', '_', $data['employment_type']));
+            } else {
+                $job_schema['employmentType'] = $employment_type;
+            }
+
+            // Add education requirements
+            if (!empty($data['education']) || !empty($data['eligibility_post_wise'])) {
+                $education_req = '';
+                if (!empty($data['education'])) {
+                    $education_req = is_array($data['education']) ? implode(', ', $data['education']) : $data['education'];
+                } elseif (!empty($data['eligibility_post_wise'][0]['eligibility'])) {
+                    $education_req = $data['eligibility_post_wise'][0]['eligibility'];
+                }
+                
+                if ($education_req) {
+                    $job_schema['educationRequirements'] = array(
+                        '@type' => 'EducationalOccupationalCredential',
+                        'credentialCategory' => $education_req
+                    );
+                }
+            }
+
+            // Add qualifications
+            if (!empty($data['age_eligibility'])) {
+                $job_schema['qualifications'] = $data['age_eligibility'];
+            }
+
+            // Add total positions available
+            if (!empty($total_vacancy)) {
+                // Extract numeric value if possible
+                $vacancy_number = preg_replace('/[^0-9]/', '', $total_vacancy);
+                if (!empty($vacancy_number)) {
+                    $job_schema['totalJobOpenings'] = intval($vacancy_number);
+                }
+            }
+
+            // Add application fee as job benefits or special commitments
+            if (!empty($data['fees']) && is_array($data['fees'])) {
+                $fee_text = array();
+                foreach ($data['fees'] as $fee_item) {
+                    if (!empty($fee_item['title']) && !empty($fee_item['value'])) {
+                        $fee_text[] = $fee_item['title'] . ': ' . $fee_item['value'];
+                    }
+                }
+                if (!empty($fee_text)) {
+                    $job_schema['specialCommitments'] = 'Application Fee - ' . implode(', ', $fee_text);
+                }
+            }
+
+            // Add apply link if available
+            $apply_link_schema = !empty($data['links']['apply_online']) ? $data['links']['apply_online'] : get_permalink();
+            $job_schema['directApply'] = true;
+            
+            // Add identifier
+            $job_schema['identifier'] = array(
+                '@type' => 'PropertyValue',
+                'name' => !empty($organization) ? $organization : get_bloginfo('name'),
+                'value' => get_the_ID()
+            );
+
+            $schema_markup[] = $job_schema;
+        }
+
+        // Output schema markup
+        if (!empty($schema_markup)) {
+            foreach ($schema_markup as $schema) {
+                echo '<script type="application/ld+json">' . wp_json_encode($schema, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) . '</script>' . "\n";
+            }
+        }
 ?>
         <div class="post-hero">
             <div class="post-hero-content">
