@@ -39,6 +39,8 @@
         // Extract links from ChatGPT JSON
         $apply_link = !empty($data['links']['apply_online']) ? $data['links']['apply_online'] : '';
         $pdf_link = !empty($data['links']['notification_pdf']) ? $data['links']['notification_pdf'] : '';
+        $admit_card_link = !empty($data['links']['admit_card']) ? $data['links']['admit_card'] : '';
+        $result_link = !empty($data['links']['result']) ? $data['links']['result'] : '';
         $website_link = !empty($data['links']['official_website']) ? $data['links']['official_website'] : '';
         $additional_links = !empty($data['links']['additional_links']) ? $data['links']['additional_links'] : array();
         ?>
@@ -312,7 +314,7 @@
             <!-- Right Sidebar -->
             <aside class="post-sidebar">
                 <!-- Action Buttons -->
-                <?php if ($apply_link || $pdf_link || $website_link): ?>
+                <?php if ($apply_link || $pdf_link || $admit_card_link || $result_link || $website_link): ?>
                     <div class="card">
                         <div class="card-header">
                             <h3 class="card-title">Quick Actions</h3>
@@ -338,6 +340,29 @@
                                             <line x1="12" y1="15" x2="12" y2="3"></line>
                                         </svg>
                                         Download Notification
+                                    </a>
+                                <?php endif; ?>
+
+                                <?php if ($admit_card_link): ?>
+                                    <a href="<?php echo esc_url($admit_card_link); ?>" target="_blank" rel="nofollow" class="btn-action btn-secondary">
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <rect x="2" y="7" width="20" height="15" rx="2" ry="2"></rect>
+                                            <polyline points="17 2 12 7 7 2"></polyline>
+                                        </svg>
+                                        Download Admit Card
+                                    </a>
+                                <?php endif; ?>
+
+                                <?php if ($result_link): ?>
+                                    <a href="<?php echo esc_url($result_link); ?>" target="_blank" rel="nofollow" class="btn-action btn-secondary">
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                            <polyline points="14 2 14 8 20 8"></polyline>
+                                            <line x1="16" y1="13" x2="8" y2="13"></line>
+                                            <line x1="16" y1="17" x2="8" y2="17"></line>
+                                            <polyline points="10 9 9 9 8 9"></polyline>
+                                        </svg>
+                                        Check Result
                                     </a>
                                 <?php endif; ?>
 

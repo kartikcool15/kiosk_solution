@@ -34,6 +34,9 @@ if ($all_posts_query->have_posts()) :
         $admit_card_date = $dates['admit_card_date'];
         $exam_date = $dates['exam_date'];
 
+        // Get admit card link from JSON
+        $admit_card_link = !empty($data['links']['admit_card']) ? $data['links']['admit_card'] : '';
+
         // Get timestamp for sorting
         $admit_card_timestamp = ($admit_card_date !== 'N/A') ? strtotime($admit_card_date) : 0;
         $exam_timestamp = ($exam_date !== 'N/A') ? strtotime($exam_date) : false;
@@ -73,6 +76,7 @@ if ($all_posts_query->have_posts()) :
             'organization' => $organization,
             'admit_card_date' => $admit_card_date,
             'exam_date' => $exam_date,
+            'admit_card_link' => $admit_card_link,
             'active_status' => $active_status,
             'status_class' => $status_class,
             'status_priority' => $status_priority,
@@ -132,6 +136,7 @@ if ($all_posts_query->have_posts()) :
                     $organization = $post_item['organization'];
                     $admit_card_date = $post_item['admit_card_date'];
                     $exam_date = $post_item['exam_date'];
+                    $admit_card_link = $post_item['admit_card_link'];
                     $active_status = $post_item['active_status'];
                     $status_class = $post_item['status_class'];
                 ?>
@@ -163,9 +168,15 @@ if ($all_posts_query->have_posts()) :
                         </div>
 
                         <div class="td-cell td-action" data-label="Action">
-                            <a href="<?php echo esc_url(get_permalink($post_id)); ?>" class="btn-view">
-                                View Details
-                            </a>
+                            <?php if ($admit_card_link): ?>
+                                <a href="<?php echo esc_url($admit_card_link); ?>" target="_blank" rel="nofollow" class="btn-view">
+                                    Download Admit Card
+                                </a>
+                            <?php else: ?>
+                                <a href="<?php echo esc_url(get_permalink($post_id)); ?>" class="btn-view">
+                                    View Details
+                                </a>
+                            <?php endif; ?>
                         </div>
                     </div>
                 <?php endforeach; ?>
