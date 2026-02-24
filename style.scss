@@ -250,28 +250,34 @@ footer {
 					background-color: transparent;
 					cursor: pointer;
 					margin-bottom: 2px;
+					border-bottom: 1px solid rgba($border-color, 0.3);
+
+					&:last-child {
+						border-bottom: none;
+					}
 
 					&:hover {
 						background-color: $sidebar-item-hover;
-						
+
 						.search-result-title {
 							color: $primary-color;
 						}
-					}
-
-					.search-result-title {
-						color: $text-white;
-						font-size: 0.875rem;
-						font-weight: 400;
-						margin-bottom: 0.5rem;
-						line-height: 1.4;
-						transition: color 0.2s ease;
 					}
 
 					.search-result-categories {
 						display: flex;
 						gap: 0.5rem;
 						flex-wrap: wrap;
+						margin-bottom: 0.5rem;
+					}
+
+					.search-result-title {
+						color: $text-white;
+						font-size: 0.875rem;
+						font-weight: 400;
+						margin-bottom: 0;
+						line-height: 1.4;
+						transition: color 0.2s ease;
 					}
 
 					.search-category-badge {

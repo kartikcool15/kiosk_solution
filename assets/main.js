@@ -144,8 +144,8 @@
                 }
                 
                 html += '<a href="' + post.url + '" class="search-result-item">' +
-                        '<div class="search-result-title">' + post.title + '</div>' +
                         '<div class="search-result-categories">' + categoryBadges + '</div>' +
+                        '<div class="search-result-title">' + post.title + '</div>' +
                         '</a>';
             });
             

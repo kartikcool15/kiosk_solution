@@ -35,7 +35,7 @@
             <div class="topbar">
                 <div class="topbar-filters">
                     <div class="search-container">
-                        <input type="search" id="post-search" class="post-search-input" placeholder="Search posts...">
+                        <input type="search" id="post-search" class="post-search-input" placeholder="Search Anything...">
                         <div id="search-results" class="search-results-dropdown"></div>
                     </div>
                     
