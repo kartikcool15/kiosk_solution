@@ -26,6 +26,10 @@ class Kiosk_Content_Automation
         // Register custom fields
         add_action('init', array($this, 'register_custom_fields'));
 
+        // Add meta box for custom fields
+        add_action('add_meta_boxes', array($this, 'add_custom_fields_meta_box'));
+        add_action('save_post', array($this, 'save_custom_fields_meta_box'));
+
         // Setup cron schedule
         add_filter('cron_schedules', array($this, 'custom_cron_schedules'));
 
@@ -147,6 +151,222 @@ class Kiosk_Content_Automation
             'single' => true,
             'show_in_rest' => true,
         ));
+    }
+
+    /**
+     * Add meta box for custom fields
+     */
+    public function add_custom_fields_meta_box()
+    {
+        add_meta_box(
+            'kiosk_custom_fields',
+            'Content Automation Fields',
+            array($this, 'render_custom_fields_meta_box'),
+            'post',
+            'normal',
+            'high'
+        );
+    }
+
+    /**
+     * Render meta box content
+     */
+    public function render_custom_fields_meta_box($post)
+    {
+        // Add nonce for security
+        wp_nonce_field('kiosk_custom_fields_meta_box', 'kiosk_custom_fields_nonce');
+
+        // Get current values
+        $source_post_id = get_post_meta($post->ID, 'kiosk_source_post_id', true);
+        $processing_status = get_post_meta($post->ID, 'kiosk_processing_status', true);
+        $start_date = get_post_meta($post->ID, 'kiosk_start_date', true);
+        $last_date = get_post_meta($post->ID, 'kiosk_last_date', true);
+        $exam_date = get_post_meta($post->ID, 'kiosk_exam_date', true);
+        $admit_card_date = get_post_meta($post->ID, 'kiosk_admit_card_date', true);
+        $result_date = get_post_meta($post->ID, 'kiosk_result_date', true);
+        $counselling_date = get_post_meta($post->ID, 'kiosk_counselling_date', true);
+        $interview_date = get_post_meta($post->ID, 'kiosk_interview_date', true);
+        $chatgpt_json = get_post_meta($post->ID, 'kiosk_chatgpt_json', true);
+
+        ?>
+        <style>
+            .kiosk-field-group {
+                margin-bottom: 15px;
+            }
+            .kiosk-field-group label {
+                display: block;
+                font-weight: 600;
+                margin-bottom: 5px;
+            }
+            .kiosk-field-group input[type="text"],
+            .kiosk-field-group input[type="date"] {
+                width: 100%;
+                max-width: 400px;
+            }
+            .kiosk-field-group textarea {
+                width: 100%;
+                min-height: 200px;
+                font-family: monospace;
+                font-size: 12px;
+            }
+            .kiosk-section {
+                margin-bottom: 25px;
+                padding-bottom: 20px;
+                border-bottom: 1px solid #ddd;
+            }
+            .kiosk-section:last-child {
+                border-bottom: none;
+            }
+            .kiosk-section h4 {
+                margin-top: 0;
+                margin-bottom: 15px;
+                color: #23282d;
+            }
+            .kiosk-status-badge {
+                display: inline-block;
+                padding: 3px 8px;
+                border-radius: 3px;
+                font-size: 11px;
+                font-weight: 600;
+                text-transform: uppercase;
+            }
+            .kiosk-status-pending {
+                background: #f0f0f1;
+                color: #646970;
+            }
+            .kiosk-status-processing {
+                background: #fcf3cd;
+                color: #826200;
+            }
+            .kiosk-status-completed {
+                background: #d7f1dd;
+                color: #1e8f3a;
+            }
+            .kiosk-status-failed {
+                background: #f7d9d7;
+                color: #d63638;
+            }
+        </style>
+
+        <div class="kiosk-section">
+            <h4>Source Information</h4>
+            <div class="kiosk-field-group">
+                <label for="kiosk_source_post_id">Source Post ID</label>
+                <input type="text" id="kiosk_source_post_id" name="kiosk_source_post_id" 
+                       value="<?php echo esc_attr($source_post_id); ?>" readonly 
+                       style="background: #f0f0f1;">
+                <p class="description">ID from the source API (read-only)</p>
+            </div>
+
+            <div class="kiosk-field-group">
+                <label for="kiosk_processing_status">Processing Status</label>
+                <?php if ($processing_status): ?>
+                    <span class="kiosk-status-badge kiosk-status-<?php echo esc_attr($processing_status); ?>">
+                        <?php echo esc_html($processing_status); ?>
+                    </span>
+                <?php else: ?>
+                    <span class="kiosk-status-badge kiosk-status-pending">Not processed</span>
+                <?php endif; ?>
+            </div>
+        </div>
+
+        <div class="kiosk-section">
+            <h4>Important Dates</h4>
+            <div class="kiosk-field-group">
+                <label for="kiosk_start_date">Application Start Date</label>
+                <input type="date" id="kiosk_start_date" name="kiosk_start_date" 
+                       value="<?php echo esc_attr($start_date); ?>">
+            </div>
+
+            <div class="kiosk-field-group">
+                <label for="kiosk_last_date">Application Last Date</label>
+                <input type="date" id="kiosk_last_date" name="kiosk_last_date" 
+                       value="<?php echo esc_attr($last_date); ?>">
+            </div>
+
+            <div class="kiosk-field-group">
+                <label for="kiosk_exam_date">Exam Date</label>
+                <input type="date" id="kiosk_exam_date" name="kiosk_exam_date" 
+                       value="<?php echo esc_attr($exam_date); ?>">
+            </div>
+
+            <div class="kiosk-field-group">
+                <label for="kiosk_admit_card_date">Admit Card Release Date</label>
+                <input type="date" id="kiosk_admit_card_date" name="kiosk_admit_card_date" 
+                       value="<?php echo esc_attr($admit_card_date); ?>">
+            </div>
+
+            <div class="kiosk-field-group">
+                <label for="kiosk_result_date">Result Date</label>
+                <input type="date" id="kiosk_result_date" name="kiosk_result_date" 
+                       value="<?php echo esc_attr($result_date); ?>">
+            </div>
+
+            <div class="kiosk-field-group">
+                <label for="kiosk_counselling_date">Counselling Date</label>
+                <input type="date" id="kiosk_counselling_date" name="kiosk_counselling_date" 
+                       value="<?php echo esc_attr($counselling_date); ?>">
+            </div>
+
+            <div class="kiosk-field-group">
+                <label for="kiosk_interview_date">Interview Date</label>
+                <input type="date" id="kiosk_interview_date" name="kiosk_interview_date" 
+                       value="<?php echo esc_attr($interview_date); ?>">
+            </div>
+        </div>
+
+        <div class="kiosk-section">
+            <h4>ChatGPT Processed Data (JSON)</h4>
+            <div class="kiosk-field-group">
+                <textarea id="kiosk_chatgpt_json" name="kiosk_chatgpt_json" readonly 
+                          style="background: #f0f0f1;"><?php echo esc_textarea($chatgpt_json); ?></textarea>
+                <p class="description">Full JSON data from ChatGPT processing (read-only)</p>
+            </div>
+        </div>
+        <?php
+    }
+
+    /**
+     * Save meta box data
+     */
+    public function save_custom_fields_meta_box($post_id)
+    {
+        // Check if nonce is set
+        if (!isset($_POST['kiosk_custom_fields_nonce'])) {
+            return;
+        }
+
+        // Verify nonce
+        if (!wp_verify_nonce($_POST['kiosk_custom_fields_nonce'], 'kiosk_custom_fields_meta_box')) {
+            return;
+        }
+
+        // Check if autosave
+        if (defined('DOING_AUTOSAVE') && DOING_AUTOSAVE) {
+            return;
+        }
+
+        // Check user permissions
+        if (!current_user_can('edit_post', $post_id)) {
+            return;
+        }
+
+        // Save date fields (these are editable)
+        $date_fields = array(
+            'kiosk_start_date',
+            'kiosk_last_date',
+            'kiosk_exam_date',
+            'kiosk_admit_card_date',
+            'kiosk_result_date',
+            'kiosk_counselling_date',
+            'kiosk_interview_date'
+        );
+
+        foreach ($date_fields as $field) {
+            if (isset($_POST[$field])) {
+                update_post_meta($post_id, $field, sanitize_text_field($_POST[$field]));
+            }
+        }
     }
 
     /**
