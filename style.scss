@@ -251,7 +251,11 @@ footer {
 					cursor: pointer;
 					margin-bottom: 2px;
 					border-bottom: 1px solid rgba($border-color, 0.3);
-
+					display: flex;
+					align-items: center;
+					justify-content: space-between;
+					gap: 20px;
+					flex-direction: row-reverse;
 					&:last-child {
 						border-bottom: none;
 					}
@@ -269,6 +273,8 @@ footer {
 						gap: 0.5rem;
 						flex-wrap: wrap;
 						margin-bottom: 0.5rem;
+						width: fit-content;
+						flex-shrink: 0;
 					}
 
 					.search-result-title {
