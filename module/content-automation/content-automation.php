@@ -416,6 +416,10 @@ class Kiosk_Content_Automation
      */
     public function custom_cron_schedules($schedules)
     {
+        $schedules['every_5_minutes'] = array(
+            'interval' => 300,
+            'display' => __('Every 5 Minutes', 'kiosk')
+        );
         $schedules['every_30_minutes'] = array(
             'interval' => 1800,
             'display' => __('Every 30 Minutes', 'kiosk')

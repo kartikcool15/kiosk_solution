@@ -121,6 +121,9 @@ class Kiosk_Admin_Settings
                                 <th scope="row"><?php _e('Sync Schedule', 'kiosk'); ?></th>
                                 <td>
                                     <select name="kiosk_automation_settings[cron_schedule]">
+                                        <option value="every_5_minutes" <?php selected($settings['cron_schedule'], 'every_5_minutes'); ?>>
+                                            <?php _e('Every 5 Minutes', 'kiosk'); ?>
+                                        </option>
                                         <option value="every_30_minutes" <?php selected($settings['cron_schedule'], 'every_30_minutes'); ?>>
                                             <?php _e('Every 30 Minutes', 'kiosk'); ?>
                                         </option>
