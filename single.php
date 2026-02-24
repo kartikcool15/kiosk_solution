@@ -16,16 +16,6 @@
             <div class="post-hero-content">
                 <nav class="breadcrumb">
                     <?php if (function_exists("rank_math_the_breadcrumbs")) rank_math_the_breadcrumbs(); ?>
-                    <a href="<?php echo esc_url(home_url('/')); ?>">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" style="vertical-align: middle; margin-right: 4px;">
-                            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
-                            <polyline points="9 22 9 12 15 12 15 22"></polyline>
-                        </svg>
-                    </a>
-                    <?php if ($category_name): ?>
-                        <span class="separator">›</span>
-                        <a href="<?php echo esc_url(get_category_link($category[0]->term_id)); ?>"><?php echo esc_html($category_name); ?></a>
-                    <?php endif; ?>
                 </nav>
 
                 <h1 class="post-hero-title"><?php the_title(); ?></h1>
