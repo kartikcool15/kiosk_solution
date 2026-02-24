@@ -294,7 +294,16 @@
                         }, 3000);
                     } else {
                         $response.removeClass('loading success').addClass('error');
-                        $response.html('<strong>Error:</strong> ' + response.data);
+                        var errorMsg = '<strong>Error:</strong> ';
+                        if (response.data && typeof response.data === 'string') {
+                            errorMsg += response.data;
+                        } else if (response.data && response.data.message) {
+                            errorMsg += response.data.message;
+                        } else {
+                            errorMsg += 'Unknown error occurred. Check browser console for details.';
+                            console.log('Full response:', response);
+                        }
+                        $response.html(errorMsg);
                     }
                 },
                 error: function(xhr, status, error) {

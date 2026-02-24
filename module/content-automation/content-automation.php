@@ -203,8 +203,7 @@ class Kiosk_Content_Automation
                 font-weight: 600;
                 margin-bottom: 5px;
             }
-            .kiosk-field-group input[type="text"],
-            .kiosk-field-group input[type="date"] {
+            .kiosk-field-group input[type="text"] {
                 width: 100%;
                 max-width: 400px;
             }
@@ -279,44 +278,51 @@ class Kiosk_Content_Automation
             <h4>Important Dates</h4>
             <div class="kiosk-field-group">
                 <label for="kiosk_start_date">Application Start Date</label>
-                <input type="date" id="kiosk_start_date" name="kiosk_start_date" 
-                       value="<?php echo esc_attr($start_date); ?>">
+                <input type="text" id="kiosk_start_date" name="kiosk_start_date" 
+                       value="<?php echo esc_attr($start_date); ?>" placeholder="e.g., 15 March 2024">
+                <p class="description">Date is stored as plain text from the source</p>
             </div>
 
             <div class="kiosk-field-group">
                 <label for="kiosk_last_date">Application Last Date</label>
-                <input type="date" id="kiosk_last_date" name="kiosk_last_date" 
-                       value="<?php echo esc_attr($last_date); ?>">
+                <input type="text" id="kiosk_last_date" name="kiosk_last_date" 
+                       value="<?php echo esc_attr($last_date); ?>" placeholder="e.g., 30 March 2024">
+                <p class="description">Date is stored as plain text from the source</p>
             </div>
 
             <div class="kiosk-field-group">
                 <label for="kiosk_exam_date">Exam Date</label>
-                <input type="date" id="kiosk_exam_date" name="kiosk_exam_date" 
-                       value="<?php echo esc_attr($exam_date); ?>">
+                <input type="text" id="kiosk_exam_date" name="kiosk_exam_date" 
+                       value="<?php echo esc_attr($exam_date); ?>" placeholder="e.g., 15 April 2024">
+                <p class="description">Date is stored as plain text from the source</p>
             </div>
 
             <div class="kiosk-field-group">
                 <label for="kiosk_admit_card_date">Admit Card Release Date</label>
-                <input type="date" id="kiosk_admit_card_date" name="kiosk_admit_card_date" 
-                       value="<?php echo esc_attr($admit_card_date); ?>">
+                <input type="text" id="kiosk_admit_card_date" name="kiosk_admit_card_date" 
+                       value="<?php echo esc_attr($admit_card_date); ?>" placeholder="e.g., 1 April 2024">
+                <p class="description">Date is stored as plain text from the source</p>
             </div>
 
             <div class="kiosk-field-group">
                 <label for="kiosk_result_date">Result Date</label>
-                <input type="date" id="kiosk_result_date" name="kiosk_result_date" 
-                       value="<?php echo esc_attr($result_date); ?>">
+                <input type="text" id="kiosk_result_date" name="kiosk_result_date" 
+                       value="<?php echo esc_attr($result_date); ?>" placeholder="e.g., 1 May 2024">
+                <p class="description">Date is stored as plain text from the source</p>
             </div>
 
             <div class="kiosk-field-group">
                 <label for="kiosk_counselling_date">Counselling Date</label>
-                <input type="date" id="kiosk_counselling_date" name="kiosk_counselling_date" 
-                       value="<?php echo esc_attr($counselling_date); ?>">
+                <input type="text" id="kiosk_counselling_date" name="kiosk_counselling_date" 
+                       value="<?php echo esc_attr($counselling_date); ?>" placeholder="e.g., 10 May 2024">
+                <p class="description">Date is stored as plain text from the source</p>
             </div>
 
             <div class="kiosk-field-group">
                 <label for="kiosk_interview_date">Interview Date</label>
-                <input type="date" id="kiosk_interview_date" name="kiosk_interview_date" 
-                       value="<?php echo esc_attr($interview_date); ?>">
+                <input type="text" id="kiosk_interview_date" name="kiosk_interview_date" 
+                       value="<?php echo esc_attr($interview_date); ?>" placeholder="e.g., 20 May 2024">
+                <p class="description">Date is stored as plain text from the source</p>
             </div>
         </div>
 
@@ -2206,10 +2212,15 @@ class Kiosk_Content_Automation
      */
     public function update_post_content_from_json()
     {
-        check_ajax_referer('kiosk_admin_nonce', 'nonce');
+        // Check nonce
+        if (!isset($_POST['nonce']) || !wp_verify_nonce($_POST['nonce'], 'kiosk_admin_nonce')) {
+            wp_send_json_error('Invalid security token. Please refresh the page and try again.');
+            return;
+        }
 
         if (!current_user_can('manage_options')) {
-            wp_send_json_error('Permission denied');
+            wp_send_json_error('You do not have permission to perform this action.');
+            return;
         }
 
         // Get all posts that have ChatGPT data
