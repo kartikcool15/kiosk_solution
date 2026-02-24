@@ -30,6 +30,10 @@ class Kiosk_Content_Automation
         add_action('add_meta_boxes', array($this, 'add_custom_fields_meta_box'));
         add_action('save_post', array($this, 'save_custom_fields_meta_box'));
 
+        // Enable native custom fields meta box
+        add_filter('default_hidden_meta_boxes', array($this, 'show_custom_fields_meta_box'), 10, 2);
+        add_action('admin_head', array($this, 'enable_custom_fields_support'));
+
         // Setup cron schedule
         add_filter('cron_schedules', array($this, 'custom_cron_schedules'));
 
@@ -366,6 +370,44 @@ class Kiosk_Content_Automation
             if (isset($_POST[$field])) {
                 update_post_meta($post_id, $field, sanitize_text_field($_POST[$field]));
             }
+        }
+    }
+
+    /**
+     * Show native custom fields meta box by default
+     */
+    public function show_custom_fields_meta_box($hidden, $screen)
+    {
+        // Make sure the custom fields meta box is not hidden for posts
+        if ('post' === $screen->base) {
+            // Remove 'postcustom' from hidden meta boxes
+            $hidden = array_diff($hidden, array('postcustom'));
+        }
+        return $hidden;
+    }
+
+    /**
+     * Enable custom fields support
+     */
+    public function enable_custom_fields_support()
+    {
+        // Enable custom fields for block editor
+        if (get_current_screen() && get_current_screen()->is_block_editor()) {
+            ?>
+            <script>
+            // Enable custom fields in Gutenberg
+            jQuery(document).ready(function($) {
+                if (wp.data && wp.data.select('core/edit-post')) {
+                    // Check if custom fields panel is available
+                    const isCustomFieldsEnabled = wp.data.select('core/edit-post').isFeatureActive('customFields');
+                    if (!isCustomFieldsEnabled) {
+                        // Try to enable it
+                        wp.data.dispatch('core/edit-post').toggleFeature('customFields');
+                    }
+                }
+            });
+            </script>
+            <?php
         }
     }
 
