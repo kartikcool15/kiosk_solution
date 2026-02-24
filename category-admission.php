@@ -37,35 +37,39 @@ if ($all_posts_query->have_posts()) :
         // Get timestamp for sorting
         $start_timestamp = ($start_date !== 'N/A') ? strtotime($start_date) : false;
         $last_timestamp = ($last_date !== 'N/A') ? strtotime($last_date) : false;
+        
+        // Get today's date at midnight for proper date comparison
         $current_time = current_time('timestamp');
+        $today_start = strtotime('today', $current_time);
+        $tomorrow_start = strtotime('tomorrow', $current_time);
         
         // Calculate Active Status with Ongoing and Admission Closed
         $active_status = '';
         $status_class = '';
         $status_priority = 6; // Default priority (no status)
         
-        if ($last_timestamp && $last_timestamp < $current_time) {
-            // Last date has passed
+        if ($last_timestamp && $last_timestamp < $today_start) {
+            // Last date was before today (admission closed)
             $active_status = 'Admission Closed';
             $status_class = 'status-completed';
             $status_priority = 5; // Lowest priority
-        } elseif ($last_timestamp && ($last_timestamp - $current_time) <= 7 * 24 * 60 * 60 && $last_timestamp >= $current_time) {
-            // Last date is within 1 week from now
+        } elseif ($last_timestamp && $last_timestamp >= $today_start && $last_timestamp < ($today_start + 7 * 24 * 60 * 60)) {
+            // Last date is today or within the next 7 days (ending soon)
             $active_status = 'Ending Soon';
             $status_class = 'status-ending';
             $status_priority = 1; // Highest priority
-        } elseif ($start_timestamp && $start_timestamp > $current_time) {
-            // Start date is in the future
+        } elseif ($start_timestamp && $start_timestamp >= $tomorrow_start) {
+            // Start date is tomorrow or later (upcoming)
             $active_status = 'Upcoming';
             $status_class = 'status-upcoming';
             $status_priority = 2;
-        } elseif ($start_timestamp && ($current_time - $start_timestamp) <= 7 * 24 * 60 * 60) {
-            // Start date is within the past week
+        } elseif ($start_timestamp && $start_timestamp >= ($today_start - 7 * 24 * 60 * 60) && $start_timestamp < $tomorrow_start) {
+            // Start date was within the past 7 days or is today (new)
             $active_status = 'New';
             $status_class = 'status-new';
             $status_priority = 3;
-        } elseif ($start_timestamp && $start_timestamp <= $current_time && $last_timestamp && $last_timestamp > $current_time) {
-            // Start date has passed and last date is still in future (Ongoing)
+        } elseif ($start_timestamp && $start_timestamp < $today_start && $last_timestamp && $last_timestamp >= $today_start) {
+            // Start date has passed and last date is today or in future (ongoing)
             $active_status = 'Ongoing';
             $status_class = 'status-ongoing';
             $status_priority = 4;

@@ -48,29 +48,33 @@ if ($all_posts_query->have_posts()) :
 
         // Get timestamp for sorting
         $result_timestamp = ($result_date !== 'N/A') ? strtotime($result_date) : 0;
+        
+        // Get today's date at midnight for proper date comparison
         $current_time = current_time('timestamp');
+        $today_start = strtotime('today', $current_time);
+        $tomorrow_start = strtotime('tomorrow', $current_time);
 
         // Calculate Active Status
         $active_status = '';
         $status_class = '';
         $status_priority = 5; // Default priority (no status)
 
-        if ($result_timestamp && ($current_time - $result_timestamp) <= 7 * 24 * 60 * 60 && $result_timestamp <= $current_time) {
-            // Result declared within last 7 days
+        if ($result_timestamp && $result_timestamp >= ($today_start - 7 * 24 * 60 * 60) && $result_timestamp < $tomorrow_start) {
+            // Result declared within last 7 days (including today)
             $active_status = 'Out Now';
             $status_class = 'status-new';
             $status_priority = 1; // Highest priority
-        } elseif ($result_timestamp && ($result_timestamp - $current_time) <= 7 * 24 * 60 * 60 && $result_timestamp > $current_time) {
-            // Result date is within 7 days in future
+        } elseif ($result_timestamp && $result_timestamp >= $tomorrow_start && $result_timestamp < ($today_start + 7 * 24 * 60 * 60)) {
+            // Result date is within the next 7 days (releasing soon)
             $active_status = 'Releasing Soon';
             $status_class = 'status-upcoming';
             $status_priority = 2;
-        } elseif ($next_timestamp && ($next_timestamp - $current_time) <= 14 * 24 * 60 * 60 && $next_timestamp > $current_time) {
-            // Next date (counselling/interview) within 14 days
+        } elseif ($next_timestamp && $next_timestamp >= $tomorrow_start && $next_timestamp < ($today_start + 14 * 24 * 60 * 60)) {
+            // Next date (counselling/interview) within the next 14 days
             $active_status = 'Counselling Soon';
             $status_class = 'status-upcoming';
             $status_priority = 3;
-        } elseif ($result_timestamp && ($current_time - $result_timestamp) > 30 * 24 * 60 * 60) {
+        } elseif ($result_timestamp && $result_timestamp < ($today_start - 30 * 24 * 60 * 60)) {
             // Result date more than 30 days ago
             $active_status = 'Result Old';
             $status_class = 'status-completed';

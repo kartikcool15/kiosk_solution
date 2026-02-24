@@ -40,30 +40,34 @@ if ($all_posts_query->have_posts()) :
         // Get timestamp for sorting
         $admit_card_timestamp = ($admit_card_date !== 'N/A') ? strtotime($admit_card_date) : 0;
         $exam_timestamp = ($exam_date !== 'N/A') ? strtotime($exam_date) : false;
+        
+        // Get today's date at midnight for proper date comparison
         $current_time = current_time('timestamp');
+        $today_start = strtotime('today', $current_time);
+        $tomorrow_start = strtotime('tomorrow', $current_time);
         
         // Calculate Active Status
         $active_status = '';
         $status_class = '';
         $status_priority = 5; // Default priority (no status)
         
-        if ($exam_timestamp && $exam_timestamp < $current_time) {
-            // Exam date has passed
+        if ($exam_timestamp && $exam_timestamp < $today_start) {
+            // Exam date was before today (exam completed)
             $active_status = 'Exam Completed';
             $status_class = 'status-completed';
             $status_priority = 4; // Low priority (historical)
-        } elseif ($exam_timestamp && ($exam_timestamp - $current_time) <= 7 * 24 * 60 * 60 && $exam_timestamp >= $current_time) {
-            // Exam date is within 7 days from now
+        } elseif ($exam_timestamp && $exam_timestamp >= $today_start && $exam_timestamp < ($today_start + 7 * 24 * 60 * 60)) {
+            // Exam date is today or within the next 7 days (exam soon)
             $active_status = 'Exam Soon';
             $status_class = 'status-ending';
             $status_priority = 1; // Highest priority
-        } elseif ($admit_card_timestamp && $admit_card_timestamp <= $current_time) {
-            // Admit card date has passed (card is released)
+        } elseif ($admit_card_timestamp && $admit_card_timestamp < $tomorrow_start) {
+            // Admit card date is today or has passed (card is released/available)
             $active_status = 'Available';
             $status_class = 'status-new';
             $status_priority = 2;
-        } elseif ($admit_card_timestamp && ($admit_card_timestamp - $current_time) <= 10 * 24 * 60 * 60) {
-            // Admit card date is within 10 days in future
+        } elseif ($admit_card_timestamp && $admit_card_timestamp >= $tomorrow_start && $admit_card_timestamp < ($today_start + 10 * 24 * 60 * 60)) {
+            // Admit card date is within the next 10 days (releasing soon)
             $active_status = 'Releasing Soon';
             $status_class = 'status-upcoming';
             $status_priority = 3;
