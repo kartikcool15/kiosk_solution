@@ -56,8 +56,8 @@ if ($all_posts_query->have_posts()) :
             $active_status = 'Application Closed';
             $status_class = 'status-completed';
             $status_priority = 5; // Lowest priority
-        } elseif ($start_timestamp && $start_timestamp >= ($today_start - 7 * 24 * 60 * 60) && $start_timestamp < $tomorrow_start) {
-            // Start date was within the past 7 days or is today (new)
+        } elseif ($start_timestamp && $start_timestamp >= $today_start && $start_timestamp < $tomorrow_start) {
+            // Start date is today (new)
             $active_status = 'New';
             $status_class = 'status-new';
             $status_priority = 1; // Highest priority
