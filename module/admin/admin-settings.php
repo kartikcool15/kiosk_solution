@@ -431,5 +431,57 @@ function kiosk_deactivate_cron()
     }
 }
 
+// Add Modified Date Column to Posts Admin
+add_filter('manage_posts_columns', 'kiosk_add_modified_date_column');
+add_action('manage_posts_custom_column', 'kiosk_display_modified_date_column', 10, 2);
+add_filter('manage_edit-post_sortable_columns', 'kiosk_modified_date_sortable_column');
+
+/**
+ * Add Modified Date column to posts list
+ */
+function kiosk_add_modified_date_column($columns)
+{
+    // Insert Modified Date column after the Date column
+    $new_columns = array();
+    foreach ($columns as $key => $value) {
+        $new_columns[$key] = $value;
+        if ($key === 'date') {
+            $new_columns['modified_date'] = __('Modified Date', 'kiosk');
+        }
+    }
+    return $new_columns;
+}
+
+/**
+ * Display Modified Date column content
+ */
+function kiosk_display_modified_date_column($column_name, $post_id)
+{
+    if ($column_name === 'modified_date') {
+        $modified_time = get_post_modified_time('U', false, $post_id);
+        $modified_date = get_post_modified_time('Y/m/d', false, $post_id);
+        $modified_time_display = get_post_modified_time('g:i a', false, $post_id);
+        
+        $time_diff = time() - $modified_time;
+        
+        if ($time_diff < DAY_IN_SECONDS) {
+            $display = sprintf(__('%s ago', 'kiosk'), human_time_diff($modified_time, current_time('timestamp')));
+        } else {
+            $display = $modified_date . '<br>' . $modified_time_display;
+        }
+        
+        echo '<abbr title="' . esc_attr(get_post_modified_time('c', false, $post_id)) . '">' . esc_html($display) . '</abbr>';
+    }
+}
+
+/**
+ * Make Modified Date column sortable
+ */
+function kiosk_modified_date_sortable_column($columns)
+{
+    $columns['modified_date'] = 'modified';
+    return $columns;
+}
+
 // Initialize the class
 new Kiosk_Admin_Settings();
