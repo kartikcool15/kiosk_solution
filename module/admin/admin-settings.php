@@ -326,6 +326,33 @@ class Kiosk_Admin_Settings
                         <?php endif; ?>
                     </div>
 
+                    <?php 
+                    // Check cron status
+                    $next_cron = wp_next_scheduled('kiosk_fetch_content_cron');
+                    $cron_disabled = defined('DISABLE_WP_CRON') && DISABLE_WP_CRON;
+                    ?>
+                    <div class="kiosk-cron-status" style="margin: 15px 0; padding: 10px; background: #f0f6fc; border-left: 4px solid #2271b1;">
+                        <div class="status-item">
+                            <span class="label"><strong><?php _e('Cron Status:', 'kiosk'); ?></strong></span>
+                            <?php if ($cron_disabled): ?>
+                                <span class="value" style="color: #d63638;">
+                                    ⚠️ <?php _e('WP Cron is DISABLED. Please setup external cron job.', 'kiosk'); ?>
+                                </span>
+                            <?php elseif ($next_cron): ?>
+                                <span class="value" style="color: #2271b1;">
+                                    ✓ <?php echo sprintf(__('Next sync scheduled at: %s (in %s)', 'kiosk'), 
+                                        date('Y-m-d H:i:s', $next_cron),
+                                        human_time_diff($next_cron, current_time('timestamp'))
+                                    ); ?>
+                                </span>
+                            <?php else: ?>
+                                <span class="value" style="color: #d63638;">
+                                    ✗ <?php _e('No cron scheduled! Enable automation and save settings.', 'kiosk'); ?>
+                                </span>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+
                     <div class="kiosk-actions">
                         <button type="button" class="button button-primary button-large" id="kiosk-test-connection">
                             <?php _e('Test API Connection', 'kiosk'); ?>
@@ -333,6 +360,10 @@ class Kiosk_Admin_Settings
 
                         <button type="button" class="button button-secondary button-large" id="kiosk-manual-sync">
                             <?php _e('Run Manual Sync Now', 'kiosk'); ?>
+                        </button>
+
+                        <button type="button" class="button button-secondary button-large" id="kiosk-force-full-sync">
+                            <?php _e('Force Full Sync (Ignore Date Filter)', 'kiosk'); ?>
                         </button>
 
                         <button type="button" class="button button-secondary button-large" id="kiosk-fix-slugs">

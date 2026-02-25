@@ -45,6 +45,7 @@ class Kiosk_Content_Automation
 
         // Admin AJAX handlers
         add_action('wp_ajax_kiosk_manual_sync', array($this, 'manual_sync'));
+        add_action('wp_ajax_kiosk_force_full_sync', array($this, 'force_full_sync'));
         add_action('wp_ajax_kiosk_test_api_connection', array($this, 'test_api_connection'));
         add_action('wp_ajax_kiosk_fetch_single_post', array($this, 'fetch_single_post_ajax'));
         add_action('wp_ajax_kiosk_process_chatgpt_now', array($this, 'manual_process_chatgpt'));
@@ -457,11 +458,17 @@ class Kiosk_Content_Automation
         }
 
         // Add modified_after filter if provided
+        // This gets posts that were modified OR created after this date
         if (!empty($modified_after)) {
             $args['modified_after'] = $modified_after;
+            // Also use 'after' to catch newly created posts
+            $args['after'] = $modified_after;
         }
 
         $url = add_query_arg($args, $this->get_api_base_url() . '/posts');
+
+        // Log the API request URL for debugging
+        error_log('Kiosk API Request: ' . $url);
 
         $response = wp_remote_get($url, array(
             'timeout' => 30,
@@ -489,6 +496,10 @@ class Kiosk_Content_Automation
             error_log('Kiosk API JSON Error: ' . json_last_error_msg());
             return false;
         }
+
+        // Log number of posts fetched
+        $post_count = is_array($posts) ? count($posts) : 0;
+        error_log('Kiosk API: Fetched ' . $post_count . ' posts');
 
         return $posts;
     }
@@ -1120,12 +1131,12 @@ class Kiosk_Content_Automation
      * Main function to fetch and publish content
      * NEW ASYNC APPROACH: Create posts immediately with ACF data, queue ChatGPT processing for later
      */
-    public function fetch_and_publish_content()
+    public function fetch_and_publish_content($force_full = false)
     {
         $settings = get_option('kiosk_automation_settings', array());
         $enabled = isset($settings['enabled']) ? $settings['enabled'] : false;
 
-        if (!$enabled) {
+        if (!$enabled && !$force_full) {
             return;
         }
 
@@ -1142,7 +1153,8 @@ class Kiosk_Content_Automation
         $modified_after = '';
 
         // Use last successful sync timestamp in ISO 8601 format
-        if (isset($last_sync_data['timestamp_iso'])) {
+        // Skip modified_after if force_full is true
+        if (!$force_full && isset($last_sync_data['timestamp_iso'])) {
             $modified_after = $last_sync_data['timestamp_iso'];
         }
 
@@ -1937,6 +1949,23 @@ class Kiosk_Content_Automation
         }
 
         $this->fetch_and_publish_content();
+
+        $last_sync = get_option('kiosk_last_sync', array());
+        wp_send_json_success($last_sync);
+    }
+
+    /**
+     * Force full sync - ignores date filters (AJAX)
+     */
+    public function force_full_sync()
+    {
+        check_ajax_referer('kiosk_admin_nonce', 'nonce');
+
+        if (!current_user_can('manage_options')) {
+            wp_send_json_error('Permission denied');
+        }
+
+        $this->fetch_and_publish_content(true); // Force full sync
 
         $last_sync = get_option('kiosk_last_sync', array());
         wp_send_json_success($last_sync);

@@ -153,6 +153,78 @@
         });
         
         /**
+         * Force Full Sync (Ignores Date Filters)
+         */
+        $('#kiosk-force-full-sync').on('click', function(e) {
+            e.preventDefault();
+            
+            var $button = $(this);
+            var $response = $('#kiosk-sync-response');
+            
+            if (!confirm('This will fetch the latest posts ignoring date filters. This is useful when new posts are not appearing. Continue?')) {
+                return;
+            }
+            
+            // Disable button and show loading
+            $button.prop('disabled', true);
+            $button.html('<span class="kiosk-spinner"></span> Force Syncing...');
+            
+            // Show loading message
+            $response.removeClass('success error').addClass('loading').show();
+            $response.html('Force fetching content from API (ignoring date filters)...');
+            
+            $.ajax({
+                url: kioskAdmin.ajax_url,
+                type: 'POST',
+                data: {
+                    action: 'kiosk_force_full_sync',
+                    nonce: kioskAdmin.nonce
+                },
+                timeout: 60000, // 60 second timeout
+                success: function(response) {
+                    $button.prop('disabled', false);
+                    $button.html('Force Full Sync (Ignore Date Filter)');
+                    
+                    if (response.success) {
+                        $response.removeClass('loading error').addClass('success');
+                        
+                        var message = '<strong>Force Sync Complete!</strong><br>';
+                        if (response.data && response.data.imported !== undefined) {
+                            message += 'Posts imported: ' + response.data.imported + '<br>';
+                            message += 'Posts updated: ' + response.data.updated + '<br>';
+                            message += 'Posts skipped (duplicates): ' + response.data.skipped + '<br>';
+                            message += 'Time: ' + response.data.time;
+                        } else {
+                            message += 'Check the status section for results.';
+                        }
+                        
+                        $response.html(message);
+                        
+                        // Reload page after 2 seconds to show updated stats
+                        setTimeout(function() {
+                            location.reload();
+                        }, 2000);
+                    } else {
+                        $response.removeClass('loading success').addClass('error');
+                        $response.html('<strong>Error:</strong> ' + response.data);
+                    }
+                },
+                error: function(xhr, status, error) {
+                    $button.prop('disabled', false);
+                    $button.html('Force Full Sync (Ignore Date Filter)');
+                    
+                    $response.removeClass('loading success').addClass('error');
+                    
+                    if (status === 'timeout') {
+                        $response.html('<strong>Timeout:</strong> The sync is taking longer than expected. It may still be running in the background. Please check back in a few minutes.');
+                    } else {
+                        $response.html('<strong>Error:</strong> ' + error);
+                    }
+                }
+            });
+        });
+        
+        /**
          * Fix Post Slugs from ChatGPT Data
          */
         $('#kiosk-fix-slugs').on('click', function(e) {
