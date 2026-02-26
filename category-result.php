@@ -137,7 +137,6 @@ if ($all_posts_query->have_posts()) :
                     <div class="th-cell th-title">Title</div>
                     <div class="th-cell th-organization">Organization</div>
                     <div class="th-cell th-result">Result Date</div>
-                    <div class="th-cell th-next">Next Date</div>
                     <div class="th-cell th-status">Active Status</div>
                     <div class="th-cell th-action">Action</div>
                 </div>
@@ -166,10 +165,6 @@ if ($all_posts_query->have_posts()) :
 
                         <div class="td-cell td-result" data-label="Result Date">
                             <span><?php echo esc_html(kiosk_format_date_display($result_date)); ?></span>
-                        </div>
-
-                        <div class="td-cell td-next" data-label="Next Date">
-                            <?php echo esc_html(kiosk_format_date_display($next_date)); ?>
                         </div>
 
                         <div class="td-cell td-status" data-label="Active Status">
