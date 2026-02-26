@@ -2340,12 +2340,12 @@ class Kiosk_Content_Automation
 
         // Check when the last cron ran
         $last_sync = get_option('kiosk_last_sync', array());
-        $last_sync_time = isset($last_sync['time']) ? $last_sync['time'] : 0;
-        $time_since_last = $last_sync_time ? human_time_diff($last_sync_time, current_time('timestamp')) : 'Never';
+        $last_sync_time = isset($last_sync['time']) ? absint($last_sync['time']) : 0;
+        $time_since_last = ($last_sync_time > 0) ? human_time_diff($last_sync_time, current_time('timestamp')) : 'Never';
         
         // Check next scheduled cron
         $next_cron = wp_next_scheduled('kiosk_fetch_content_cron');
-        $next_run = $next_cron ? human_time_diff($next_cron, current_time('timestamp')) : 'Not scheduled';
+        $next_run = ($next_cron && is_numeric($next_cron)) ? human_time_diff(current_time('timestamp'), $next_cron) : 'Not scheduled';
 
         $wp_admin_bar->add_node(array(
             'id'    => 'kiosk-manual-cron',
