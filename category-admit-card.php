@@ -101,13 +101,18 @@ if ($all_posts_query->have_posts()) :
         // Group posts: active status (1-3) > no status (5) > exam completed (6)
         $a_group = ($a['status_priority'] < 5) ? 1 : (($a['status_priority'] == 5) ? 2 : 3);
         $b_group = ($b['status_priority'] < 5) ? 1 : (($b['status_priority'] == 5) ? 2 : 3);
-        
+
         // Sort by group first
         if ($a_group != $b_group) {
             return $a_group - $b_group;
         }
-        
-        // Within same group, sort by modified date (newest first)
+
+        // Within active status group, sort by priority (Exam Soon > Available > Releasing Soon)
+        if ($a_group == 1 && $a['status_priority'] != $b['status_priority']) {
+            return $a['status_priority'] - $b['status_priority'];
+        }
+
+        // Within same priority or other groups, sort by modified date (newest first)
         return $b['modified_timestamp'] - $a['modified_timestamp'];
     });
 
