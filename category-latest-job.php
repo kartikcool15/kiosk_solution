@@ -78,6 +78,9 @@ if ($all_posts_query->have_posts()) :
             $status_priority = 4;
         }
         
+        // Get modified date for sorting
+        $modified_timestamp = get_post_modified_time('U', false, $post_id);
+        
         // Store post data
         $posts_data[] = array(
             'post_id' => $post_id,
@@ -89,42 +92,37 @@ if ($all_posts_query->have_posts()) :
             'status_class' => $status_class,
             'status_priority' => $status_priority,
             'last_timestamp' => $last_timestamp,
-            'start_timestamp' => $start_timestamp
+            'start_timestamp' => $start_timestamp,
+            'modified_timestamp' => $modified_timestamp
         );
     endwhile;
     
     // Reset post data
     wp_reset_postdata();
     
-    // Sort posts by status priority and date
-    // New: sorted by start_date (most recent first)
-    // Ending Soon: sorted by last_date (soonest first)
-    // Upcoming: sorted by start_date (soonest first)
+    // Sort posts: active status at top (ending soon, upcoming, ongoing), then others, application closed last - all by modified date
     usort($posts_data, function($a, $b) {
-        // First, sort by status priority
-        if ($a['status_priority'] != $b['status_priority']) {
-            return $a['status_priority'] - $b['status_priority'];
+        // Group posts: active status (1-4) > no status (6) > application closed (5)
+        $a_group = ($a['status_priority'] <= 4) ? 1 : (($a['status_priority'] == 6) ? 2 : 3);
+        $b_group = ($b['status_priority'] <= 4) ? 1 : (($b['status_priority'] == 6) ? 2 : 3);
+        
+        // Sort by group first
+        if ($a_group != $b_group) {
+            return $a_group - $b_group;
         }
         
-        // Within same priority, sort by date
-        if ($a['status_priority'] == 1) {
-            // New - sort by start_date descending (most recent first)
-            $date_a = $a['start_timestamp'] ?: 0;
-            $date_b = $b['start_timestamp'] ?: 0;
-            return $date_b - $date_a;
-        } elseif ($a['status_priority'] == 2) {
-            // Ending Soon - sort by last_date ascending (soonest first)
-            $date_a = $a['last_timestamp'] ?: PHP_INT_MAX;
-            $date_b = $b['last_timestamp'] ?: PHP_INT_MAX;
-            return $date_a - $date_b;
-        } elseif ($a['status_priority'] == 3) {
-            // Upcoming - sort by start_date ascending (soonest first)
-            $date_a = $a['start_timestamp'] ?: PHP_INT_MAX;
-            $date_b = $b['start_timestamp'] ?: PHP_INT_MAX;
-            return $date_a - $date_b;
+        // Within active status group, sort by priority (Ending Soon > Upcoming > Ongoing)
+        // Ending Soon = 2, Upcoming = 3, Ongoing = 4, New = 1
+        if ($a_group == 1 && $a['status_priority'] != $b['status_priority']) {
+            // Special ordering: Ending Soon (2), Upcoming (3), Ongoing (4), New (1)
+            $priority_order = [1 => 4, 2 => 1, 3 => 2, 4 => 3];
+            $a_order = isset($priority_order[$a['status_priority']]) ? $priority_order[$a['status_priority']] : 99;
+            $b_order = isset($priority_order[$b['status_priority']]) ? $priority_order[$b['status_priority']] : 99;
+            return $a_order - $b_order;
         }
         
-        return 0;
+        // Within same priority or other groups, sort by modified date (newest first)
+        return $b['modified_timestamp'] - $a['modified_timestamp'];
     });
     
     // Calculate pagination
@@ -149,7 +147,7 @@ if ($all_posts_query->have_posts()) :
                     <div class="th-cell th-title">Title</div>
                     <div class="th-cell th-organization">Organization</div>
                     <div class="th-cell th-start">Start Date</div>
-                    <div class="th-cell th-last">Last Date</div>
+                    <div class="th-cell th-last">Last Updated</div>
                     <div class="th-cell th-status">Active Status</div>
                     <div class="th-cell th-action">Action</div>
                 </div>
@@ -165,6 +163,11 @@ if ($all_posts_query->have_posts()) :
                     $last_date = $post_item['last_date'];
                     $active_status = $post_item['active_status'];
                     $status_class = $post_item['status_class'];
+                    $modified_timestamp = $post_item['modified_timestamp'];
+                    
+                    // Calculate relative time
+                    $time_diff = human_time_diff($modified_timestamp, current_time('timestamp'));
+                    $last_updated = 'Updated ' . $time_diff . ' ago';
                 ?>
                     <div class="table-row">
                         <div class="td-cell td-title" data-label="Title">
@@ -181,8 +184,8 @@ if ($all_posts_query->have_posts()) :
                             <?php echo esc_html(kiosk_format_date_display($start_date)); ?>
                         </div>
 
-                        <div class="td-cell td-last" data-label="Last Date">
-                            <span><?php echo esc_html(kiosk_format_date_display($last_date)); ?></span>
+                        <div class="td-cell td-last" data-label="Last Updated">
+                            <span><?php echo esc_html($last_updated); ?></span>
                         </div>
                         
                         <div class="td-cell td-status" data-label="Active Status">
