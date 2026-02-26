@@ -40,17 +40,17 @@ if ($all_posts_query->have_posts()) :
         // Get timestamp for sorting
         $admit_card_timestamp = ($admit_card_date !== 'N/A') ? strtotime($admit_card_date) : 0;
         $exam_timestamp = ($exam_date !== 'N/A') ? strtotime($exam_date) : false;
-        
+
         // Get today's date at midnight for proper date comparison
         $current_time = current_time('timestamp');
         $today_start = strtotime('today', $current_time);
         $tomorrow_start = strtotime('tomorrow', $current_time);
-        
+
         // Calculate Active Status
         $active_status = '';
         $status_class = '';
         $status_priority = 5; // Default priority (no status)
-        
+
         if ($exam_timestamp && $exam_timestamp < $today_start) {
             // Exam date was before today (exam completed)
             $active_status = 'Exam Completed';
@@ -72,10 +72,10 @@ if ($all_posts_query->have_posts()) :
             $status_class = 'status-upcoming';
             $status_priority = 3;
         }
-        
+
         // Get modified date for sorting
         $modified_timestamp = get_post_modified_time('U', false, $post_id);
-        
+
         // Store post data
         $posts_data[] = array(
             'post_id' => $post_id,
@@ -92,12 +92,12 @@ if ($all_posts_query->have_posts()) :
             'modified_timestamp' => $modified_timestamp
         );
     endwhile;
-    
+
     // Reset post data
     wp_reset_postdata();
-    
+
     // Sort posts by status priority first, then by exam date for "Exam Soon"
-    usort($posts_data, function($a, $b) {
+    usort($posts_data, function ($a, $b) {
         // First, sort by status priority
         if ($a['status_priority'] != $b['status_priority']) {
             return $a['status_priority'] - $b['status_priority'];
@@ -113,7 +113,7 @@ if ($all_posts_query->have_posts()) :
         // Otherwise sort by admit card date descending (newest first)
         return $b['admit_card_timestamp'] - $a['admit_card_timestamp'];
     });
-    
+
     // Calculate pagination
     $total_posts = count($posts_data);
     $posts_per_page = 20;
@@ -127,7 +127,7 @@ if ($all_posts_query->have_posts()) :
             <?php echo $total_posts; ?> notifications found
         </p>
     </header>
-    
+
     <div class="main-content-wrapper">
         <div class="posts-table-wrapper">
             <div class="posts-table">
@@ -136,13 +136,13 @@ if ($all_posts_query->have_posts()) :
                     <div class="th-cell th-title">Title</div>
                     <div class="th-cell th-organization">Organization</div>
                     <div class="th-cell th-date">Admit Card Date</div>
-                    <div class="th-cell th-exam">Exam Date</div>
+                    <div class="th-cell th-exam">Last Updated</div>
                     <div class="th-cell th-status">Active Status</div>
                     <div class="th-cell th-action">Action</div>
                 </div>
 
                 <!-- Table Body -->
-                <?php foreach ($current_page_posts as $post_item): 
+                <?php foreach ($current_page_posts as $post_item):
                     $post_id = $post_item['post_id'];
                     $post_title = $post_item['post_title'];
                     $organization = $post_item['organization'];
@@ -151,6 +151,11 @@ if ($all_posts_query->have_posts()) :
                     $admit_card_link = $post_item['admit_card_link'];
                     $active_status = $post_item['active_status'];
                     $status_class = $post_item['status_class'];
+                    $modified_timestamp = $post_item['modified_timestamp'];
+
+                    // Calculate relative time
+                    $time_diff = human_time_diff($modified_timestamp, current_time('timestamp'));
+                    $last_updated = 'Updated ' . $time_diff . ' ago';
                 ?>
                     <div class="table-row">
                         <div class="td-cell td-title" data-label="Title">
@@ -167,8 +172,8 @@ if ($all_posts_query->have_posts()) :
                             <?php echo esc_html(kiosk_format_date_display($admit_card_date)); ?>
                         </div>
 
-                        <div class="td-cell td-exam" data-label="Exam Date">
-                            <?php echo esc_html(kiosk_format_date_display($exam_date)); ?>
+                        <div class="td-cell td-exam" data-label="Last Updated">
+                            <?php echo esc_html($last_updated); ?>
                         </div>
 
                         <div class="td-cell td-status" data-label="Active Status">
@@ -218,7 +223,7 @@ if ($all_posts_query->have_posts()) :
                     <?php echo $page; ?>
                 <?php endforeach; ?>
             </div>
-        <?php endif;
+    <?php endif;
     endif;
     ?>
 
