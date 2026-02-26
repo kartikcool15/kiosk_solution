@@ -55,7 +55,7 @@ if ($all_posts_query->have_posts()) :
             // Exam date was before today (exam completed)
             $active_status = 'Exam Completed';
             $status_class = 'status-completed';
-            $status_priority = 4; // Low priority (historical)
+            $status_priority = 6; // Lowest priority (shown last)
         } elseif ($exam_timestamp && $exam_timestamp >= $today_start && $exam_timestamp < ($today_start + 7 * 24 * 60 * 60)) {
             // Exam date is today or within the next 7 days (exam soon)
             $active_status = 'Exam Soon';
@@ -73,6 +73,9 @@ if ($all_posts_query->have_posts()) :
             $status_priority = 3;
         }
         
+        // Get modified date for sorting
+        $modified_timestamp = get_post_modified_time('U', false, $post_id);
+        
         // Store post data
         $posts_data[] = array(
             'post_id' => $post_id,
@@ -85,7 +88,8 @@ if ($all_posts_query->have_posts()) :
             'status_class' => $status_class,
             'status_priority' => $status_priority,
             'admit_card_timestamp' => $admit_card_timestamp,
-            'exam_timestamp' => $exam_timestamp
+            'exam_timestamp' => $exam_timestamp,
+            'modified_timestamp' => $modified_timestamp
         );
     endwhile;
     
@@ -101,6 +105,10 @@ if ($all_posts_query->have_posts()) :
         // If same priority, sort by exam date (closest first) for Exam Soon
         if ($a['status_priority'] == 1 && $a['exam_timestamp'] != $b['exam_timestamp']) {
             return $a['exam_timestamp'] - $b['exam_timestamp'];
+        }
+        // For posts with no priority (priority 5), sort by modified date (newest first)
+        if ($a['status_priority'] == 5) {
+            return $b['modified_timestamp'] - $a['modified_timestamp'];
         }
         // Otherwise sort by admit card date descending (newest first)
         return $b['admit_card_timestamp'] - $a['admit_card_timestamp'];
