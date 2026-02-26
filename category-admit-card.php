@@ -96,22 +96,19 @@ if ($all_posts_query->have_posts()) :
     // Reset post data
     wp_reset_postdata();
 
-    // Sort posts by status priority first, then by exam date for "Exam Soon"
+    // Sort posts: active status at top, then no status, then exam completed - all by modified date
     usort($posts_data, function ($a, $b) {
-        // First, sort by status priority
-        if ($a['status_priority'] != $b['status_priority']) {
-            return $a['status_priority'] - $b['status_priority'];
+        // Group posts: active status (1-3) > no status (5) > exam completed (6)
+        $a_group = ($a['status_priority'] < 5) ? 1 : (($a['status_priority'] == 5) ? 2 : 3);
+        $b_group = ($b['status_priority'] < 5) ? 1 : (($b['status_priority'] == 5) ? 2 : 3);
+        
+        // Sort by group first
+        if ($a_group != $b_group) {
+            return $a_group - $b_group;
         }
-        // If same priority, sort by exam date (closest first) for Exam Soon
-        if ($a['status_priority'] == 1 && $a['exam_timestamp'] != $b['exam_timestamp']) {
-            return $a['exam_timestamp'] - $b['exam_timestamp'];
-        }
-        // For posts with no priority (priority 5), sort by modified date (newest first)
-        if ($a['status_priority'] == 5) {
-            return $b['modified_timestamp'] - $a['modified_timestamp'];
-        }
-        // Otherwise sort by admit card date descending (newest first)
-        return $b['admit_card_timestamp'] - $a['admit_card_timestamp'];
+        
+        // Within same group, sort by modified date (newest first)
+        return $b['modified_timestamp'] - $a['modified_timestamp'];
     });
 
     // Calculate pagination
