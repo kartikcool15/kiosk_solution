@@ -180,7 +180,11 @@ if ($all_posts_query->have_posts()) :
                         </div>
 
                         <div class="td-cell td-action" data-label="Action">
-                            <?php if ($admit_card_link): ?>
+                            <?php if ($active_status === 'Exam Completed'): ?>
+                                <a href="<?php echo esc_url(get_permalink($post_id)); ?>" class="btn-view">
+                                    View Details
+                                </a>
+                            <?php elseif ($admit_card_link): ?>
                                 <a href="<?php echo esc_url($admit_card_link); ?>" target="_blank" rel="nofollow" class="btn-view">
                                     Download Admit Card
                                 </a>
