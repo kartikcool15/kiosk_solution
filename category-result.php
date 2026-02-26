@@ -81,6 +81,9 @@ if ($all_posts_query->have_posts()) :
             $status_priority = 4;
         }
 
+        // Get modified date for sorting
+        $modified_timestamp = get_post_modified_time('U', false, $post_id);
+        
         // Store post data
         $posts_data[] = array(
             'post_id' => $post_id,
@@ -92,21 +95,17 @@ if ($all_posts_query->have_posts()) :
             'status_class' => $status_class,
             'status_priority' => $status_priority,
             'result_timestamp' => $result_timestamp,
-            'next_timestamp' => $next_timestamp
+            'next_timestamp' => $next_timestamp,
+            'modified_timestamp' => $modified_timestamp
         );
     endwhile;
 
     // Reset post data
     wp_reset_postdata();
 
-    // Sort posts by status priority first, then by result date
+    // Sort posts by modified date descending (newest first)
     usort($posts_data, function ($a, $b) {
-        // First, sort by status priority
-        if ($a['status_priority'] != $b['status_priority']) {
-            return $a['status_priority'] - $b['status_priority'];
-        }
-        // If same priority, sort by result date descending (newest first)
-        return $b['result_timestamp'] - $a['result_timestamp'];
+        return $b['modified_timestamp'] - $a['modified_timestamp'];
     });
 
     // Calculate pagination
