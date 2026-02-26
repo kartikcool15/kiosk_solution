@@ -66,7 +66,7 @@ class Kiosk_Admin_Settings
         $settings = get_option('kiosk_automation_settings', array(
             'enabled' => false,
             'api_base_url' => 'https://sarkariresult.com.cm/wp-json/wp/v2',
-            'cron_schedule' => 'hourly',
+            'cron_schedule' => 'every_5_minutes',
             'posts_per_sync' => 10,
             'filter_by_categories' => false,
             'source_categories' => array(),

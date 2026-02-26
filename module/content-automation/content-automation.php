@@ -69,6 +69,12 @@ class Kiosk_Content_Automation
 
         // Date field sync: when custom date fields are updated, sync back to JSON
         add_action('updated_post_meta', array($this, 'sync_date_field_to_json'), 10, 4);
+
+        // Admin bar manual cron trigger
+        add_action('admin_bar_menu', array($this, 'add_cron_trigger_to_admin_bar'), 999);
+        add_action('wp_ajax_kiosk_manual_trigger_cron', array($this, 'manual_trigger_cron'));
+        add_action('admin_footer', array($this, 'add_cron_trigger_script'));
+        add_action('wp_footer', array($this, 'add_cron_trigger_script'));
     }
 
     /**
@@ -2314,6 +2320,149 @@ class Kiosk_Content_Automation
             'errors' => $error_count,
             'total_checked' => $query->found_posts
         ));
+    }
+
+    /**
+     * Add manual cron trigger button to admin bar
+     */
+    public function add_cron_trigger_to_admin_bar($wp_admin_bar)
+    {
+        // Only show to administrators
+        if (!current_user_can('manage_options')) {
+            return;
+        }
+
+        // Get settings and check if automation is enabled
+        $settings = get_option('kiosk_automation_settings', array());
+        if (empty($settings['enabled'])) {
+            return;
+        }
+
+        // Check when the last cron ran
+        $last_sync = get_option('kiosk_last_sync', array());
+        $last_sync_time = isset($last_sync['time']) ? $last_sync['time'] : 0;
+        $time_since_last = $last_sync_time ? human_time_diff($last_sync_time, current_time('timestamp')) : 'Never';
+        
+        // Check next scheduled cron
+        $next_cron = wp_next_scheduled('kiosk_fetch_content_cron');
+        $next_run = $next_cron ? human_time_diff($next_cron, current_time('timestamp')) : 'Not scheduled';
+
+        $wp_admin_bar->add_node(array(
+            'id'    => 'kiosk-manual-cron',
+            'title' => '<span class="ab-icon dashicons dashicons-update"></span> Run Sync',
+            'href'  => '#',
+            'meta'  => array(
+                'title' => sprintf('Last sync: %s ago | Next: in %s', $time_since_last, $next_run),
+                'class' => 'kiosk-manual-cron-trigger'
+            )
+        ));
+    }
+
+    /**
+     * AJAX handler for manual cron trigger
+     */
+    public function manual_trigger_cron()
+    {
+        check_ajax_referer('kiosk_admin_nonce', 'nonce');
+
+        if (!current_user_can('manage_options')) {
+            wp_send_json_error(array('message' => 'Unauthorized access'));
+        }
+
+        // Check if automation is enabled
+        $settings = get_option('kiosk_automation_settings', array());
+        if (empty($settings['enabled'])) {
+            wp_send_json_error(array('message' => 'Content automation is not enabled'));
+        }
+
+        // Trigger the cron function immediately
+        do_action('kiosk_fetch_content_cron');
+
+        // Get the updated last sync info
+        $last_sync = get_option('kiosk_last_sync', array());
+        
+        wp_send_json_success(array(
+            'message' => 'Sync completed successfully!',
+            'last_sync' => $last_sync
+        ));
+    }
+
+    /**
+     * Add JavaScript for manual cron trigger
+     */
+    public function add_cron_trigger_script()
+    {
+        // Only show to administrators
+        if (!current_user_can('manage_options')) {
+            return;
+        }
+
+        $settings = get_option('kiosk_automation_settings', array());
+        if (empty($settings['enabled'])) {
+            return;
+        }
+        ?>
+        <style>
+            #wp-admin-bar-kiosk-manual-cron .ab-icon:before {
+                content: "\f463";
+                top: 2px;
+            }
+            #wp-admin-bar-kiosk-manual-cron.running .ab-icon {
+                animation: kiosk-spin 1s linear infinite;
+            }
+            @keyframes kiosk-spin {
+                from { transform: rotate(0deg); }
+                to { transform: rotate(360deg); }
+            }
+        </style>
+        <script type="text/javascript">
+        jQuery(document).ready(function($) {
+            $('#wp-admin-bar-kiosk-manual-cron a').on('click', function(e) {
+                e.preventDefault();
+                
+                if ($(this).parent().hasClass('running')) {
+                    return;
+                }
+
+                if (!confirm('This will run the content sync now. Continue?')) {
+                    return;
+                }
+
+                var $button = $(this).parent();
+                $button.addClass('running');
+                $(this).find('.ab-item').append(' <span class="spinner is-active" style="float:none;margin:0 0 0 5px;"></span>');
+
+                $.ajax({
+                    url: ajaxurl || '<?php echo admin_url('admin-ajax.php'); ?>',
+                    type: 'POST',
+                    data: {
+                        action: 'kiosk_manual_trigger_cron',
+                        nonce: '<?php echo wp_create_nonce('kiosk_admin_nonce'); ?>'
+                    },
+                    success: function(response) {
+                        $button.removeClass('running');
+                        $('.spinner', $button).remove();
+                        
+                        if (response.success) {
+                            alert('✓ ' + response.data.message + '\n\nPosts Added: ' + 
+                                (response.data.last_sync.added || 0) + '\nPosts Updated: ' + 
+                                (response.data.last_sync.updated || 0) + '\nPosts Skipped: ' + 
+                                (response.data.last_sync.skipped || 0));
+                            location.reload();
+                        } else {
+                            alert('✗ Error: ' + response.data.message);
+                        }
+                    },
+                    error: function() {
+                        $button.removeClass('running');
+                        $('.spinner', $button).remove();
+                        alert('✗ Failed to trigger sync. Please try again.');
+                    }
+                });
+            });
+        });
+        </script>
+        <?php
     }
 }
 
