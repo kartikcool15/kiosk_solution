@@ -46,6 +46,9 @@ if ($all_posts_query->have_posts()) :
             $next_timestamp = strtotime($interview_date);
         }
 
+        // Get result link from JSON
+        $result_link = !empty($data['links']['result']) ? $data['links']['result'] : '';
+
         // Get timestamp for sorting
         $result_timestamp = ($result_date !== 'N/A') ? strtotime($result_date) : 0;
         
@@ -74,11 +77,6 @@ if ($all_posts_query->have_posts()) :
             $active_status = 'Counselling Soon';
             $status_class = 'status-upcoming';
             $status_priority = 3;
-        } elseif ($result_timestamp && $result_timestamp < ($today_start - 30 * 24 * 60 * 60)) {
-            // Result date more than 30 days ago
-            $active_status = 'Result Old';
-            $status_class = 'status-completed';
-            $status_priority = 4;
         }
 
         // Get modified date for sorting
@@ -91,6 +89,7 @@ if ($all_posts_query->have_posts()) :
             'organization' => $organization,
             'result_date' => $result_date,
             'next_date' => $next_date,
+            'result_link' => $result_link,
             'active_status' => $active_status,
             'status_class' => $status_class,
             'status_priority' => $status_priority,
@@ -103,8 +102,16 @@ if ($all_posts_query->have_posts()) :
     // Reset post data
     wp_reset_postdata();
 
-    // Sort posts by modified date descending (newest first)
+    // Sort posts: "Out Now" at top, then by modified date descending (newest first)
     usort($posts_data, function ($a, $b) {
+        // Keep "Out Now" at the top
+        if ($a['status_priority'] == 1 && $b['status_priority'] != 1) {
+            return -1;
+        }
+        if ($b['status_priority'] == 1 && $a['status_priority'] != 1) {
+            return 1;
+        }
+        // For all posts, sort by modified date descending (newest first)
         return $b['modified_timestamp'] - $a['modified_timestamp'];
     });
 
@@ -142,6 +149,7 @@ if ($all_posts_query->have_posts()) :
                     $organization = $post_item['organization'];
                     $result_date = $post_item['result_date'];
                     $next_date = $post_item['next_date'];
+                    $result_link = $post_item['result_link'];
                     $active_status = $post_item['active_status'];
                     $status_class = $post_item['status_class'];
                 ?>
@@ -173,9 +181,15 @@ if ($all_posts_query->have_posts()) :
                         </div>
 
                         <div class="td-cell td-action" data-label="Action">
-                            <a href="<?php echo esc_url(get_permalink($post_id)); ?>" class="btn-view">
-                                View Details
-                            </a>
+                            <?php if ($result_link): ?>
+                                <a href="<?php echo esc_url($result_link); ?>" target="_blank" rel="nofollow" class="btn-view">
+                                    View Result
+                                </a>
+                            <?php else: ?>
+                                <a href="<?php echo esc_url(get_permalink($post_id)); ?>" class="btn-view">
+                                    View Details
+                                </a>
+                            <?php endif; ?>
                         </div>
                     </div>
                 <?php endforeach; ?>
