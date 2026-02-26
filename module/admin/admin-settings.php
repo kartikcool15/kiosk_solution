@@ -436,6 +436,47 @@ class Kiosk_Admin_Settings
 // Handle cron schedule changes
 add_action('update_option_kiosk_automation_settings', 'kiosk_update_cron_schedule', 10, 2);
 
+// Auto-fix cron schedule on admin init
+add_action('admin_init', 'kiosk_check_and_fix_cron_schedule');
+
+function kiosk_check_and_fix_cron_schedule()
+{
+    $settings = get_option('kiosk_automation_settings', array());
+    
+    // Skip if automation is not enabled
+    if (empty($settings['enabled'])) {
+        return;
+    }
+    
+    $desired_schedule = isset($settings['cron_schedule']) ? $settings['cron_schedule'] : 'every_5_minutes';
+    $next_cron = wp_next_scheduled('kiosk_fetch_content_cron');
+    
+    // If no cron is scheduled, schedule it now
+    if (!$next_cron) {
+        wp_schedule_event(time(), $desired_schedule, 'kiosk_fetch_content_cron');
+        return;
+    }
+    
+    // Check if the current schedule matches the desired schedule
+    $cron_array = _get_cron_array();
+    $current_schedule = null;
+    
+    foreach ($cron_array as $timestamp => $cron_jobs) {
+        if (isset($cron_jobs['kiosk_fetch_content_cron'])) {
+            foreach ($cron_jobs['kiosk_fetch_content_cron'] as $job) {
+                $current_schedule = isset($job['schedule']) ? $job['schedule'] : null;
+                break 2;
+            }
+        }
+    }
+    
+    // If schedules don't match, reschedule
+    if ($current_schedule !== $desired_schedule) {
+        wp_unschedule_event($next_cron, 'kiosk_fetch_content_cron');
+        wp_schedule_event(time(), $desired_schedule, 'kiosk_fetch_content_cron');
+    }
+}
+
 function kiosk_update_cron_schedule($old_value, $new_value)
 {
     // Clear existing cron
@@ -446,7 +487,7 @@ function kiosk_update_cron_schedule($old_value, $new_value)
 
     // Schedule new cron if enabled
     if (isset($new_value['enabled']) && $new_value['enabled']) {
-        $schedule = isset($new_value['cron_schedule']) ? $new_value['cron_schedule'] : 'hourly';
+        $schedule = isset($new_value['cron_schedule']) ? $new_value['cron_schedule'] : 'every_5_minutes';
         wp_schedule_event(time(), $schedule, 'kiosk_fetch_content_cron');
     }
 }
