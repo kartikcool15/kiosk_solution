@@ -14,6 +14,15 @@
 
     <nav class="sidebar-nav">
         <ul class="sidebar-menu">
+            <li class="sidebar-item <?php echo (is_page('latest-updates')) ? 'active' : ''; ?>">
+                <a href="<?php echo esc_url(home_url('/latest-updates/')); ?>" class="sidebar-link">
+                    <svg class="sidebar-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
+                        <polyline points="17 6 23 6 23 12"></polyline>
+                    </svg>
+                    <span>Latest Updates</span>
+                </a>
+            </li>
             <li class="sidebar-item <?php echo (is_category('latest-job')) ? 'active' : ''; ?>">
                 <a href="<?php echo esc_url(get_category_link(get_category_by_slug('latest-job'))); ?>" class="sidebar-link">
                     <svg class="sidebar-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
