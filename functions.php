@@ -11,11 +11,11 @@ require_once get_template_directory() . '/vendor/autoload.php';
   'release' => wp_get_theme()->get('Version'),
 ]);
 
-try {
-  $this->functionFailsForSure();
-} catch (\Throwable $exception) {
-  \Sentry\captureException($exception);
-}
+// try {
+//   $this->functionFailsForSure();
+// } catch (\Throwable $exception) {
+//   \Sentry\captureException($exception);
+// }
 
 function kiosk_theme_setup() {
     // Add theme support for various features
