@@ -1,6 +1,7 @@
 # Composer
 /vendor/
 composer.lock
+composer.json
 
 # Node modules
 /node_modules/
