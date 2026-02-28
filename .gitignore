@@ -1,0 +1,30 @@
+# Composer
+/vendor/
+composer.lock
+
+# Node modules
+/node_modules/
+
+# WordPress
+.DS_Store
+Thumbs.db
+
+# Editor files
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# Backup files
+*-old-backup.php
+*.bak
+*.backup
+
+# Logs
+*.log
+error_log
+debug.log
+
+# Environment
+.env
+.env.local

@@ -353,34 +353,51 @@ class Kiosk_Admin_Settings
                         </div>
                     </div>
 
-                    <div class="kiosk-actions">
-                        <button type="button" class="button button-primary button-large" id="kiosk-test-connection">
-                            <?php _e('Test API Connection', 'kiosk'); ?>
+                    <h3 style="margin: 20px 0 10px 0; color: #2271b1;"><?php _e('🔄 Content Sync Options', 'kiosk'); ?></h3>
+                    
+                    <div class="kiosk-actions" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px;">
+                        <button type="button" class="button button-primary button-large" id="kiosk-sync-recent-created" style="height: auto; padding: 12px 15px; text-align: left;">
+                            <strong>📥 <?php _e('Fetch Recently Created', 'kiosk'); ?></strong><br>
+                            <small style="opacity: 0.8; font-weight: normal;"><?php _e('Get only NEW posts created after last sync', 'kiosk'); ?></small>
                         </button>
 
-                        <button type="button" class="button button-secondary button-large" id="kiosk-manual-sync">
-                            <?php _e('Run Manual Sync Now', 'kiosk'); ?>
+                        <button type="button" class="button button-primary button-large" id="kiosk-sync-recent-modified" style="height: auto; padding: 12px 15px; text-align: left;">
+                            <strong>🔄 <?php _e('Fetch Recently Modified', 'kiosk'); ?></strong><br>
+                            <small style="opacity: 0.8; font-weight: normal;"><?php _e('Get updated posts (creates OR updates)', 'kiosk'); ?></small>
                         </button>
 
-                        <button type="button" class="button button-secondary button-large" id="kiosk-force-full-sync">
-                            <?php _e('Force Full Sync (Ignore Date Filter)', 'kiosk'); ?>
+                        <button type="button" class="button button-secondary button-large" id="kiosk-resync-content" style="height: auto; padding: 12px 15px; text-align: left;">
+                            <strong>🔁 <?php _e('Resync Post Content', 'kiosk'); ?></strong><br>
+                            <small style="opacity: 0.8; font-weight: normal;"><?php _e('Remap from existing ChatGPT JSON (no API call)', 'kiosk'); ?></small>
                         </button>
 
-                        <button type="button" class="button button-secondary button-large" id="kiosk-fix-slugs">
-                            <?php _e('Fix Post Slugs from ChatGPT', 'kiosk'); ?>
-                        </button>
-
-                        <button type="button" class="button button-secondary button-large" id="kiosk-update-content">
-                            <?php _e('Update Post Content from ChatGPT', 'kiosk'); ?>
+                        <button type="button" class="button button-secondary button-large" id="kiosk-update-all-posts" style="height: auto; padding: 12px 15px; text-align: left;">
+                            <strong>🤖 <?php _e('Update All Posts', 'kiosk'); ?></strong><br>
+                            <small style="opacity: 0.8; font-weight: normal;"><?php _e('Re-process all posts with ChatGPT', 'kiosk'); ?></small>
                         </button>
                     </div>
 
-                    <p class="description" style="margin-top: 10px;">
-                        <strong><?php _e('Note:', 'kiosk'); ?></strong> 
-                        <?php _e('The "Fix Post Slugs" button updates all posts with correct titles and URL slugs from their ChatGPT processed data. Use this if posts are missing proper URLs or have incorrect titles.', 'kiosk'); ?>
-                        <br>
-                        <?php _e('The "Update Post Content" button updates all posts with post_content_summary from their ChatGPT processed data. Use this to replace post content with the AI-generated summary.', 'kiosk'); ?>
-                    </p>
+                    <h3 style="margin: 20px 0 10px 0; color: #666;"><?php _e('🛠️ Utilities', 'kiosk'); ?></h3>
+                    
+                    <div class="kiosk-actions" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                        <button type="button" class="button button-secondary" id="kiosk-test-connection">
+                            <?php _e('🔌 Test API Connection', 'kiosk'); ?>
+                        </button>
+
+                        <button type="button" class="button button-secondary" id="kiosk-manual-sync">
+                            <?php _e('▶️ Legacy Manual Sync', 'kiosk'); ?>
+                        </button>
+                    </div>
+
+                    <div style="background: #f0f6fc; border-left: 4px solid #2271b1; padding: 12px; margin-top: 15px;">
+                        <p style="margin: 0;"><strong><?php _e('💡 Sync Mode Guide:', 'kiosk'); ?></strong></p>
+                        <ul style="margin: 8px 0 0 0; padding-left: 20px;">
+                            <li><strong><?php _e('Recently Created:', 'kiosk'); ?></strong> <?php _e('Only imports brand new posts. Skips if post already exists.', 'kiosk'); ?></li>
+                            <li><strong><?php _e('Recently Modified:', 'kiosk'); ?></strong> <?php _e('Updates existing posts OR creates new ones. Uses timestamp tracking.', 'kiosk'); ?></li>
+                            <li><strong><?php _e('Resync Content:', 'kiosk'); ?></strong> <?php _e('Re-applies ChatGPT data to posts (titles, slugs, taxonomies, dates). Use when mapping logic changes.', 'kiosk'); ?></li>
+                            <li><strong><?php _e('Update All Posts:', 'kiosk'); ?></strong> <?php _e('Re-processes all posts through ChatGPT API using raw JSON. Use when prompts change.', 'kiosk'); ?></li>
+                        </ul>
+                    </div>
 
                     <div id="kiosk-sync-response" class="kiosk-response" style="display:none;"></div>
                 </div>

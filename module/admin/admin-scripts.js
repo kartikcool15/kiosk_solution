@@ -8,6 +8,223 @@
     $(document).ready(function() {
         
         /**
+         * NEW SYNC MODE 1: Fetch Recently Created Posts
+         */
+        $('#kiosk-sync-recent-created').on('click', function(e) {
+            e.preventDefault();
+            
+            var $button = $(this);
+            var $response = $('#kiosk-sync-response');
+            
+            if (!confirm('Fetch recently created posts (new posts only)?\n\nThis will import only NEW posts created after the last sync timestamp.')) {
+                return;
+            }
+            
+            $button.prop('disabled', true);
+            $button.html('<span class="kiosk-spinner"></span> Fetching New Posts...');
+            
+            $response.removeClass('success error').addClass('loading').show();
+            $response.html('Fetching recently created posts from API...');
+            
+            $.ajax({
+                url: kioskAdmin.ajax_url,
+                type: 'POST',
+                data: {
+                    action: 'kiosk_sync_recent_created',
+                    nonce: kioskAdmin.nonce
+                },
+                timeout: 60000,
+                success: function(response) {
+                    $button.prop('disabled', false);
+                    $button.html('<strong>📥 Fetch Recently Created</strong><br><small style="opacity: 0.8; font-weight: normal;">Get only NEW posts created after last sync</small>');
+                    
+                    if (response.success) {
+                        $response.removeClass('loading error').addClass('success');
+                        var message = '<strong>✓ Recently Created Sync Complete!</strong><br>';
+                        message += 'New posts added: ' + (response.data.added || 0) + '<br>';
+                        message += 'Posts skipped (exist): ' + (response.data.skipped || 0) + '<br>';
+                        message += 'Queued for ChatGPT: ' + (response.data.queued_for_processing || 0);
+                        $response.html(message);
+                        
+                        setTimeout(function() { location.reload(); }, 2500);
+                    } else {
+                        $response.removeClass('loading success').addClass('error');
+                        $response.html('<strong>Error:</strong> ' + (response.data || 'Unknown error'));
+                    }
+                },
+                error: function(xhr, status, error) {
+                    $button.prop('disabled', false);
+                    $button.html('<strong>📥 Fetch Recently Created</strong><br><small style="opacity: 0.8; font-weight: normal;">Get only NEW posts created after last sync</small>');
+                    $response.removeClass('loading success').addClass('error');
+                    $response.html('<strong>Error:</strong> ' + (status === 'timeout' ? 'Request timed out' : error));
+                }
+            });
+        });
+        
+        /**
+         * NEW SYNC MODE 2: Fetch Recently Modified Posts
+         */
+        $('#kiosk-sync-recent-modified').on('click', function(e) {
+            e.preventDefault();
+            
+            var $button = $(this);
+            var $response = $('#kiosk-sync-response');
+            
+            if (!confirm('Fetch recently modified posts?\n\nThis will import new posts OR update existing posts that were modified after the last sync timestamp.')) {
+                return;
+            }
+            
+            $button.prop('disabled', true);
+            $button.html('<span class="kiosk-spinner"></span> Fetching Modified Posts...');
+            
+            $response.removeClass('success error').addClass('loading').show();
+            $response.html('Fetching recently modified posts from API...');
+            
+            $.ajax({
+                url: kioskAdmin.ajax_url,
+                type: 'POST',
+                data: {
+                    action: 'kiosk_sync_recent_modified',
+                    nonce: kioskAdmin.nonce
+                },
+                timeout: 60000,
+                success: function(response) {
+                    $button.prop('disabled', false);
+                    $button.html('<strong>🔄 Fetch Recently Modified</strong><br><small style="opacity: 0.8; font-weight: normal;">Get updated posts (creates OR updates)</small>');
+                    
+                    if (response.success) {
+                        $response.removeClass('loading error').addClass('success');
+                        var message = '<strong>✓ Recently Modified Sync Complete!</strong><br>';
+                        message += 'Posts updated: ' + (response.data.updated || 0) + '<br>';
+                        message += 'New posts added: ' + (response.data.added || 0) + '<br>';
+                        message += 'Posts skipped: ' + (response.data.skipped || 0) + '<br>';
+                        message += 'Queued for ChatGPT: ' + (response.data.queued_for_processing || 0);
+                        $response.html(message);
+                        
+                        setTimeout(function() { location.reload(); }, 2500);
+                    } else {
+                        $response.removeClass('loading success').addClass('error');
+                        $response.html('<strong>Error:</strong> ' + (response.data || 'Unknown error'));
+                    }
+                },
+                error: function(xhr, status, error) {
+                    $button.prop('disabled', false);
+                    $button.html('<strong>🔄 Fetch Recently Modified</strong><br><small style="opacity: 0.8; font-weight: normal;">Get updated posts (creates OR updates)</small>');
+                    $response.removeClass('loading success').addClass('error');
+                    $response.html('<strong>Error:</strong> ' + (status === 'timeout' ? 'Request timed out' : error));
+                }
+            });
+        });
+        
+        /**
+         * NEW SYNC MODE 3: Resync Post Content
+         */
+        $('#kiosk-resync-content').on('click', function(e) {
+            e.preventDefault();
+            
+            var $button = $(this);
+            var $response = $('#kiosk-sync-response');
+            
+            if (!confirm('Resync all post content from existing ChatGPT JSON?\n\nThis will re-apply titles, slugs, taxonomies, and dates from existing ChatGPT data without making any API calls.\n\nUse this when mapping logic changes (e.g., new organization taxonomy).')) {
+                return;
+            }
+            
+            $button.prop('disabled', true);
+            $button.html('<span class="kiosk-spinner"></span> Resyncing Content...');
+            
+            $response.removeClass('success error').addClass('loading').show();
+            $response.html('Re-applying ChatGPT data to posts...');
+            
+            $.ajax({
+                url: kioskAdmin.ajax_url,
+                type: 'POST',
+                data: {
+                    action: 'kiosk_resync_content',
+                    nonce: kioskAdmin.nonce
+                },
+                timeout: 120000, // 2 minutes for processing all posts
+                success: function(response) {
+                    $button.prop('disabled', false);
+                    $button.html('<strong>🔁 Resync Post Content</strong><br><small style="opacity: 0.8; font-weight: normal;">Remap from existing ChatGPT JSON (no API call)</small>');
+                    
+                    if (response.success) {
+                        $response.removeClass('loading error').addClass('success');
+                        var message = '<strong>✓ Content Resync Complete!</strong><br>';
+                        message += 'Posts updated: ' + (response.data.updated || 0) + '<br>';
+                        message += 'Posts skipped: ' + (response.data.skipped || 0) + '<br>';
+                        message += 'Errors: ' + (response.data.errors || 0) + '<br>';
+                        message += 'Total checked: ' + (response.data.total_checked || 0);
+                        $response.html(message);
+                        
+                        setTimeout(function() { location.reload(); }, 2500);
+                    } else {
+                        $response.removeClass('loading success').addClass('error');
+                        $response.html('<strong>Error:</strong> ' + (response.data || 'Unknown error'));
+                    }
+                },
+                error: function(xhr, status, error) {
+                    $button.prop('disabled', false);
+                    $button.html('<strong>🔁 Resync Post Content</strong><br><small style="opacity: 0.8; font-weight: normal;">Remap from existing ChatGPT JSON (no API call)</small>');
+                    $response.removeClass('loading success').addClass('error');
+                    $response.html('<strong>Error:</strong> ' + (status === 'timeout' ? 'Request timed out' : error));
+                }
+            });
+        });
+        
+        /**
+         * NEW SYNC MODE 4: Update All Posts (Re-process with ChatGPT)
+         */
+        $('#kiosk-update-all-posts').on('click', function(e) {
+            e.preventDefault();
+            
+            var $button = $(this);
+            var $response = $('#kiosk-sync-response');
+            
+            if (!confirm('Re-process ALL posts with ChatGPT?\n\nThis will queue all posts for fresh ChatGPT processing using their raw JSON data.\n\nUse this when you change prompts or need fresh AI analysis.\n\nWARNING: This will use your OpenAI API credits!')) {
+                return;
+            }
+            
+            $button.prop('disabled', true);
+            $button.html('<span class="kiosk-spinner"></span> Queueing Posts...');
+            
+            $response.removeClass('success error').addClass('loading').show();
+            $response.html('Queueing all posts for ChatGPT processing...');
+            
+            $.ajax({
+                url: kioskAdmin.ajax_url,
+                type: 'POST',
+                data: {
+                    action: 'kiosk_update_all_posts',
+                    nonce: kioskAdmin.nonce
+                },
+                timeout: 120000, // 2 minutes
+                success: function(response) {
+                    $button.prop('disabled', false);
+                    $button.html('<strong>🤖 Update All Posts</strong><br><small style="opacity: 0.8; font-weight: normal;">Re-process all posts with ChatGPT</small>');
+                    
+                    if (response.success) {
+                        $response.removeClass('loading error').addClass('success');
+                        var message = '<strong>✓ Posts Queued for ChatGPT!</strong><br>';
+                        message += 'Posts queued: ' + (response.data.queued || 0) + '<br>';
+                        message += 'Posts skipped: ' + (response.data.skipped || 0) + '<br>';
+                        message += 'Total checked: ' + (response.data.total_checked || 0) + '<br><br>';
+                        message += '<em>ChatGPT processing will run in the background. Check back in a few minutes.</em>';
+                        $response.html(message);
+                    } else {
+                        $response.removeClass('loading success').addClass('error');
+                        $response.html('<strong>Error:</strong> ' + (response.data || 'Unknown error'));
+                    }
+                },
+                error: function(xhr, status, error) {
+                    $button.prop('disabled', false);
+                    $button.html('<strong>🤖 Update All Posts</strong><br><small style="opacity: 0.8; font-weight: normal;">Re-process all posts with ChatGPT</small>');
+                    $response.removeClass('loading success').addClass('error');
+                    $response.html('<strong>Error:</strong> ' + (status === 'timeout' ? 'Request timed out' : error));
+                }
+            });
+        });
+        
+        /**
          * Test API Connection
          */
         $('#kiosk-test-connection').on('click', function(e) {

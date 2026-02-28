@@ -1,4 +1,22 @@
 <?php
+
+// Load Composer autoloader
+require_once get_template_directory() . '/vendor/autoload.php';
+
+// Initialize Sentry for error tracking
+\Sentry\init([
+  'dsn' => 'https://30404e9840be130a1892a9cff66a0b12@o4510420447854592.ingest.us.sentry.io/4510964637958144',
+  'enable_logs' => true,
+  'environment' => wp_get_environment_type(), // production, staging, development
+  'release' => wp_get_theme()->get('Version'),
+]);
+
+try {
+  $this->functionFailsForSure();
+} catch (\Throwable $exception) {
+  \Sentry\captureException($exception);
+}
+
 function kiosk_theme_setup() {
     // Add theme support for various features
     add_theme_support('post-thumbnails');
@@ -467,3 +485,4 @@ function kiosk_localize_search_script() {
 }
 add_action('wp_enqueue_scripts', 'kiosk_localize_search_script');
 ?>
+
