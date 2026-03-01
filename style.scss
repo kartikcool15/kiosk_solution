@@ -605,7 +605,7 @@ footer {
 @media (max-width: 768px) {
 	// Show overlay when sidebar is open
 	body.sidebar-active::before {
-		content: '';
+		content: "";
 		position: fixed;
 		top: 0;
 		left: 0;
