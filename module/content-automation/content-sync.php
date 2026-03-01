@@ -38,16 +38,34 @@ class Kiosk_Content_Sync
         // Fetch posts created after timestamp (new posts only)
         $posts = $this->api_fetcher->fetch_posts(1, $per_page, $categories, '', $created_after);
 
-        if (!$posts || !is_array($posts)) {
-            return array(
-                'success' => false,
-                'message' => 'No posts fetched from API'
-            );
-        }
-
         $imported_count = 0;
         $skipped_count = 0;
         $queued_count = 0;
+
+        if (!$posts || !is_array($posts)) {
+            // No posts found, but still update timestamp to show sync ran
+            update_option('kiosk_last_created_sync', array(
+                'time' => current_time('mysql'),
+                'timestamp' => current_time('timestamp'),
+                'timestamp_iso' => current_time('c'),
+                'imported' => 0,
+                'skipped' => 0
+            ));
+
+            update_option('kiosk_last_sync', array(
+                'time' => current_time('mysql'),
+                'timestamp' => current_time('timestamp'),
+                'timestamp_iso' => current_time('c'),
+                'imported' => 0,
+                'updated' => 0,
+                'skipped' => 0
+            ));
+
+            return array(
+                'success' => true,
+                'message' => 'No new posts to sync'
+            );
+        }
 
         foreach ($posts as $post_data) {
             $source_post_id = $post_data['id'];
@@ -123,17 +141,36 @@ class Kiosk_Content_Sync
         // Fetch posts modified after timestamp
         $posts = $this->api_fetcher->fetch_posts(1, $per_page, $categories, $modified_after, '');
 
-        if (!$posts || !is_array($posts)) {
-            return array(
-                'success' => false,
-                'message' => 'No posts fetched from API'
-            );
-        }
-
         $updated_count = 0;
         $imported_count = 0;
         $skipped_count = 0;
         $queued_count = 0;
+
+        if (!$posts || !is_array($posts)) {
+            // No posts found, but still update timestamp to show sync ran
+            update_option('kiosk_last_modified_sync', array(
+                'time' => current_time('mysql'),
+                'timestamp' => current_time('timestamp'),
+                'timestamp_iso' => current_time('c'),
+                'updated' => 0,
+                'imported' => 0,
+                'skipped' => 0
+            ));
+
+            update_option('kiosk_last_sync', array(
+                'time' => current_time('mysql'),
+                'timestamp' => current_time('timestamp'),
+                'timestamp_iso' => current_time('c'),
+                'imported' => 0,
+                'updated' => 0,
+                'skipped' => 0
+            ));
+
+            return array(
+                'success' => true,
+                'message' => 'No modified posts to sync'
+            );
+        }
 
         foreach ($posts as $post_data) {
             $source_post_id = $post_data['id'];
@@ -369,14 +406,23 @@ class Kiosk_Content_Sync
 
         $posts = $this->api_fetcher->fetch_posts(1, $per_page, $categories, $modified_after, $modified_after);
 
-        if (!$posts || !is_array($posts)) {
-            return array('success' => false, 'message' => 'No posts fetched from API');
-        }
-
         $imported_count = 0;
         $updated_count = 0;
         $skipped_count = 0;
         $queued_count = 0;
+
+        if (!$posts || !is_array($posts)) {
+            // No posts found, but still update timestamp to show cron ran
+            update_option('kiosk_last_sync', array(
+                'time' => current_time('mysql'),
+                'timestamp' => current_time('timestamp'),
+                'timestamp_iso' => current_time('c'),
+                'imported' => 0,
+                'updated' => 0,
+                'skipped' => 0
+            ));
+            return array('success' => true, 'message' => 'No new posts to sync');
+        }
 
         foreach ($posts as $post_data) {
             $source_post_id = $post_data['id'];
