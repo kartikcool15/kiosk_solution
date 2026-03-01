@@ -34,6 +34,12 @@ class Kiosk_Content_Sync
         // Get last sync timestamp for created posts
         $last_sync = get_option('kiosk_last_created_sync', array());
         $created_after = isset($last_sync['timestamp_iso']) ? $last_sync['timestamp_iso'] : '';
+        
+        // One-time fix: If timestamp has timezone offset, clear it
+        if (!empty($created_after) && (strpos($created_after, '+') !== false || strpos($created_after, 'Z') !== false)) {
+            error_log("Kiosk Sync: Detected legacy created_after timestamp: {$created_after}");
+            $created_after = '';
+        }
 
         // Fetch posts created after timestamp (new posts only)
         $posts = $this->api_fetcher->fetch_posts(1, $per_page, $categories, '', $created_after);
@@ -155,6 +161,12 @@ class Kiosk_Content_Sync
         // Get last sync timestamp for modified posts
         $last_sync = get_option('kiosk_last_modified_sync', array());
         $modified_after = isset($last_sync['timestamp_iso']) ? $last_sync['timestamp_iso'] : '';
+        
+        // One-time fix: If timestamp has timezone offset, clear it
+        if (!empty($modified_after) && (strpos($modified_after, '+') !== false || strpos($modified_after, 'Z') !== false)) {
+            error_log("Kiosk Sync: Detected legacy modified_after timestamp: {$modified_after}");
+            $modified_after = '';
+        }
 
         // Fetch posts modified after timestamp
         $posts = $this->api_fetcher->fetch_posts(1, $per_page, $categories, $modified_after, '');
@@ -444,6 +456,14 @@ class Kiosk_Content_Sync
         // Use last successful sync timestamp in ISO 8601 format
         if (!$force_full && isset($last_sync_data['timestamp_iso'])) {
             $modified_after = $last_sync_data['timestamp_iso'];
+            
+            // One-time fix: If timestamp has timezone offset, regenerate it
+            if (strpos($modified_after, '+') !== false || strpos($modified_after, 'Z') !== false) {
+                error_log("Kiosk Sync: Detected legacy timestamp with timezone offset: {$modified_after}");
+                // Clear the bad timestamp and do a fresh sync
+                $modified_after = '';
+                error_log("Kiosk Sync: Cleared legacy timestamp, performing fresh sync");
+            }
         }
 
         // Only use modified_after (not created_after) to catch both new and updated posts

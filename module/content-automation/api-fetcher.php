@@ -29,6 +29,35 @@ class Kiosk_API_Fetcher
     }
 
     /**
+     * Sanitize timestamp to UTC format without timezone offset
+     * WordPress REST API requires timestamps in Y-m-d\TH:i:s format (UTC, no offset)
+     * 
+     * @param string $timestamp ISO 8601 timestamp (may include timezone offset)
+     * @return string UTC timestamp without offset
+     */
+    private function sanitize_timestamp($timestamp)
+    {
+        // If timestamp already in correct format (no timezone offset), return as-is
+        if (preg_match('/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/', $timestamp)) {
+            error_log("Kiosk API: Timestamp already in correct format: {$timestamp}");
+            return $timestamp;
+        }
+        
+        // Convert any timestamp format to UTC without timezone offset
+        try {
+            $dt = new DateTime($timestamp);
+            $dt->setTimezone(new DateTimeZone('UTC'));
+            $sanitized = $dt->format('Y-m-d\TH:i:s');
+            error_log("Kiosk API: Sanitized timestamp from '{$timestamp}' to '{$sanitized}'");
+            return $sanitized;
+        } catch (Exception $e) {
+            error_log("Kiosk API: Failed to sanitize timestamp '{$timestamp}': " . $e->getMessage());
+            // Return original if conversion fails
+            return $timestamp;
+        }
+    }
+
+    /**
      * Fetch posts from external API
      * 
      * @param int $page Page number
@@ -53,13 +82,15 @@ class Kiosk_API_Fetcher
         }
 
         // Fetch recently modified posts (for updates)
+        // Convert timestamp to UTC format without timezone offset (API requirement)
         if (!empty($modified_after)) {
-            $args['modified_after'] = $modified_after;
+            $args['modified_after'] = $this->sanitize_timestamp($modified_after);
         }
 
         // Fetch recently created posts only (new posts)
+        // Convert timestamp to UTC format without timezone offset (API requirement)
         if (!empty($created_after)) {
-            $args['after'] = $created_after;
+            $args['after'] = $this->sanitize_timestamp($created_after);
         }
 
         $url = add_query_arg($args, $this->api_base_url . '/posts');
