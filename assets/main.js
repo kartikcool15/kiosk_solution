@@ -11,10 +11,31 @@
          * Initialize SlimSelect for Organization Dropdown
          */
         var organizationSlim = null;
+        var mobileOrganizationSlim = null;
         
         if ($('#organization-dropdown').length) {
             organizationSlim = new SlimSelect({
                 select: '#organization-dropdown',
+                settings: {
+                    searchPlaceholder: 'Search organizations...',
+                    searchText: 'No organizations found',
+                    searchingText: 'Searching...',
+                    closeOnSelect: true
+                },
+                events: {
+                    afterChange: function(newVal) {
+                        if (newVal && newVal.length > 0 && newVal[0].value !== '') {
+                            window.location.href = newVal[0].value;
+                        }
+                    }
+                }
+            });
+        }
+
+        // Mobile organization dropdown
+        if ($('.mobile-organization-dropdown').length) {
+            mobileOrganizationSlim = new SlimSelect({
+                select: '.mobile-organization-dropdown',
                 settings: {
                     searchPlaceholder: 'Search organizations...',
                     searchText: 'No organizations found',
@@ -35,6 +56,7 @@
          * Initialize SlimSelect for Education Dropdown
          */
         var educationSlim = null;
+        var mobileEducationSlim = null;
         
         if ($('#education-dropdown').length) {
             educationSlim = new SlimSelect({
@@ -60,40 +82,66 @@
                 }
             });
         }
+
+        // Mobile education dropdown
+        if ($('.mobile-education-dropdown').length) {
+            mobileEducationSlim = new SlimSelect({
+                select: '.mobile-education-dropdown',
+                settings: {
+                    searchPlaceholder: 'Search education...',
+                    searchText: 'No education found',
+                    searchingText: 'Searching...',
+                    closeOnSelect: true
+                },
+                events: {
+                    afterChange: function(newVal) {
+                        if (newVal && newVal.length > 0 && newVal[0].value !== '') {
+                            window.location.href = newVal[0].value;
+                        } else {
+                            var categoryUrl = $('.mobile-education-dropdown').data('category-url');
+                            if (categoryUrl) {
+                                window.location.href = categoryUrl;
+                            }
+                        }
+                    }
+                }
+            });
+        }
         
 
         /**
          * Dynamic Post Search
          */
         var searchTimeout;
-        var $searchInput = $('#post-search');
-        var $searchResults = $('#search-results');
+        var $searchInput = $('.post-search-input'); // Changed to class selector
+        var $searchResults = $('.search-results-dropdown'); // Changed to class selector
         
         if ($searchInput.length) {
             // Handle input changes with debounce
             $searchInput.on('input', function() {
                 clearTimeout(searchTimeout);
                 var searchQuery = $(this).val().trim();
+                var $currentResults = $(this).siblings('.search-results-dropdown');
                 
                 // Clear results if less than 3 characters
                 if (searchQuery.length < 3) {
-                    $searchResults.hide().empty();
+                    $currentResults.hide().empty();
                     return;
                 }
                 
                 // Show loading state
-                $searchResults.html('<div class="search-loading">Searching...</div>').show();
+                $currentResults.html('<div class="search-loading">Searching...</div>').show();
                 
                 // Debounce the search request
                 searchTimeout = setTimeout(function() {
-                    performSearch(searchQuery);
+                    performSearch(searchQuery, $currentResults);
                 }, 300);
             });
             
             // Close dropdown when clicking outside
             $(document).on('click', function(e) {
                 if (!$(e.target).closest('.search-container').length) {
-                    $searchResults.hide();
+                    $('.search-results-dropdown').hide();
                 }
             });
             
@@ -105,7 +153,7 @@
             });
         }
         
-        function performSearch(query) {
+        function performSearch(query, $resultsContainer) {
             $.ajax({
                 url: kioskSearch.ajaxurl,
                 type: 'POST',
@@ -116,20 +164,20 @@
                 },
                 success: function(response) {
                     if (response.success && response.data.posts) {
-                        displaySearchResults(response.data.posts);
+                        displaySearchResults(response.data.posts, $resultsContainer);
                     } else {
-                        $searchResults.html('<div class="search-no-results">No results found</div>').show();
+                        $resultsContainer.html('<div class="search-no-results">No results found</div>').show();
                     }
                 },
                 error: function() {
-                    $searchResults.html('<div class="search-error">Search failed. Please try again.</div>').show();
+                    $resultsContainer.html('<div class="search-error">Search failed. Please try again.</div>').show();
                 }
             });
         }
         
-        function displaySearchResults(posts) {
+        function displaySearchResults(posts, $resultsContainer) {
             if (posts.length === 0) {
-                $searchResults.html('<div class="search-no-results">No results found</div>').show();
+                $resultsContainer.html('<div class="search-no-results">No results found</div>').show();
                 return;
             }
             
@@ -150,7 +198,7 @@
             });
             
             html += '</div>';
-            $searchResults.html(html).show();
+            $resultsContainer.html(html).show();
         }
         
         /**
@@ -203,35 +251,35 @@
         });
         
         /**
-         * Mobile Filter Toggle
+         * Filter Sidebar Toggle
          */
         var $filterToggle = $('.filter-toggle');
-        var $topbarFilters = $('.topbar-filters');
+        var $filterSidebar = $('#filter-sidebar');
         
-        // Toggle filters on button click
+        // Toggle filter sidebar on button click
         $filterToggle.on('click', function(e) {
             e.preventDefault();
             e.stopPropagation();
-            $topbarFilters.toggleClass('filters-open');
+            $filterSidebar.toggleClass('filter-sidebar-open');
             $(this).toggleClass('active');
         });
         
-        // Close filters when clicking outside (mobile)
+        // Close filter sidebar when clicking outside
         $(document).on('click', function(e) {
-            if ($topbarFilters.hasClass('filters-open') && 
-                !$(e.target).closest('.topbar-filters').length && 
+            if ($filterSidebar.hasClass('filter-sidebar-open') && 
+                !$(e.target).closest('#filter-sidebar').length && 
                 !$(e.target).closest('.filter-toggle').length) {
-                $topbarFilters.removeClass('filters-open');
+                $filterSidebar.removeClass('filter-sidebar-open');
                 $filterToggle.removeClass('active');
             }
         });
         
-        // Handle window resize for filters
+        // Handle window resize for filter sidebar
         $(window).on('resize', function() {
             clearTimeout(resizeTimeout);
             resizeTimeout = setTimeout(function() {
                 if (window.innerWidth > 768) {
-                    $topbarFilters.removeClass('filters-open');
+                    $filterSidebar.removeClass('filter-sidebar-open');
                     $filterToggle.removeClass('active');
                 }
             }, 250);

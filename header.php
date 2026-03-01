@@ -38,6 +38,9 @@
                     <span></span>
                     <span></span>
                 </button>
+                <a href="<?php echo home_url(); ?>">
+                    <h2 class="sidebar-brand">Govt Jobs Exams</h2>
+                </a>
                 <button class="filter-toggle" aria-label="Toggle Filters">
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
@@ -48,7 +51,7 @@
                         <input type="search" id="post-search" class="post-search-input" placeholder="Search Anything...">
                         <div id="search-results" class="search-results-dropdown"></div>
                     </div>
-                    
+
                     <select class="sidebar-dropdown-select" id="organization-dropdown">
                         <option value="">-- Choose Organization --</option>
                         <?php
@@ -104,8 +107,55 @@
                         </select>
                     <?php endif; ?>
                 </div>
-                <ul class="top-menu">
-                    <li><a href="<?php echo home_url(); ?>">Home</a></li>
-                    <!-- <li>Login</li> -->
-                </ul>
             </div>
+
+            <!-- Filter Sidebar (Mobile Only) -->
+            <aside id="filter-sidebar" class="filter-sidebar">
+                <div class="filter-sidebar-header">
+                    <h3 class="filter-sidebar-title">Filters</h3>
+                    <button class="filter-sidebar-close filter-toggle">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>
+                    </button>
+                </div>
+                <div class="filter-sidebar-content">
+                    <div class="search-container">
+                        <input type="search" class="post-search-input" placeholder="Search Anything...">
+                        <div class="search-results-dropdown"></div>
+                    </div>
+
+                    <select class="sidebar-dropdown-select mobile-organization-dropdown">
+                        <option value="">-- Choose Organization --</option>
+                        <?php
+                        if (!empty($organizations) && !is_wp_error($organizations)) :
+                            foreach ($organizations as $org) :
+                                $term_link = get_term_link($org);
+                                $selected = (is_tax('organization', $org->slug)) ? 'selected' : '';
+                        ?>
+                                <option value="<?php echo esc_url($term_link); ?>" <?php echo $selected; ?>>
+                                    <?php echo esc_html($org->name); ?> (<?php echo $org->count; ?>)
+                                </option>
+                        <?php endforeach;
+                        endif;
+                        ?>
+                    </select>
+
+                    <?php if (is_category('latest-job') || is_home() || is_front_page() || is_tax('education')) : ?>
+                        <select class="sidebar-dropdown-select mobile-education-dropdown">
+                            <option value="<?php echo esc_url(get_category_link(get_category_by_slug('latest-job'))); ?>">-- Filter by Education --</option>
+                            <?php if (!empty($education_terms) && !is_wp_error($education_terms)) : ?>
+                                <?php foreach ($education_terms as $term) :
+                                    $selected = ($current_education === $term->slug) ? 'selected' : '';
+                                    $term_link = get_term_link($term, 'education');
+                                ?>
+                                    <option value="<?php echo esc_url($term_link); ?>" <?php echo $selected; ?>>
+                                        <?php echo esc_html($term->name); ?> (<?php echo $term->count; ?>)
+                                    </option>
+                                <?php endforeach; ?>
+                            <?php endif; ?>
+                        </select>
+                    <?php endif; ?>
+                </div>
+            </aside>
