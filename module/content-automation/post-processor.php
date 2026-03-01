@@ -119,12 +119,26 @@ class Kiosk_Post_Processor
         $source_modified = isset($post_data['modified_gmt']) ? $post_data['modified_gmt'] : '';
         $last_synced_modified = get_post_meta($post_id, 'kiosk_source_modified_gmt', true);
         
+        error_log("Kiosk Sync Debug: Post {$post_id} (Source: {$post_data['id']}) - Source Modified: {$source_modified}, Last Synced: {$last_synced_modified}");
+        
+        // If this is a legacy post without timestamp, just store it and skip update
+        if (empty($last_synced_modified) && !empty($source_modified)) {
+            update_post_meta($post_id, 'kiosk_source_modified_gmt', $source_modified);
+            error_log("Kiosk Sync: Legacy post {$post_id} - Stored timestamp without updating: {$source_modified}");
+            return false; // Skip update, just stored timestamp
+        }
+        
         // Skip update if source hasn't been modified since last sync
         if (!empty($source_modified) && !empty($last_synced_modified)) {
-            if (strtotime($source_modified) <= strtotime($last_synced_modified)) {
-                error_log("Kiosk Sync: Skipping update - Source post {$post_data['id']} not modified (Source: {$source_modified}, Last: {$last_synced_modified})");
+            $source_time = strtotime($source_modified);
+            $synced_time = strtotime($last_synced_modified);
+            
+            if ($source_time <= $synced_time) {
+                error_log("Kiosk Sync: Skipping update - Source post {$post_data['id']} not modified (Source: {$source_modified} [{$source_time}], Last: {$last_synced_modified} [{$synced_time}])");
                 return false; // No update needed
             }
+            
+            error_log("Kiosk Sync: Source post {$post_data['id']} WAS modified - Will update (Source: {$source_modified} [{$source_time}], Last: {$last_synced_modified} [{$synced_time}])");
         }
         
         // Use ACF post_title if available
@@ -165,7 +179,7 @@ class Kiosk_Post_Processor
         // Clear old ChatGPT data to force re-processing
         delete_post_meta($post_id, 'kiosk_chatgpt_json');
         
-        error_log("Kiosk Sync: Updated post {$post_id} - Source modified: {$source_modified}");
+        error_log("Kiosk Sync: Successfully updated post {$post_id} - Source modified: {$source_modified}");
 
         return true;
     }
