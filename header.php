@@ -33,6 +33,11 @@
 
         <main class="main-content">
             <div class="topbar">
+                <button class="mobile-menu-toggle sidebar-toggle" aria-label="Toggle Menu">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
                 <div class="topbar-filters">
                     <div class="search-container">
                         <input type="search" id="post-search" class="post-search-input" placeholder="Search Anything...">

@@ -153,6 +153,55 @@
             $searchResults.html(html).show();
         }
         
+        /**
+         * Mobile Sidebar Toggle
+         */
+        var $sidebar = $('#custom-sidebar');
+        var $sidebarToggle = $('.sidebar-toggle'); // This will select all toggle buttons
+        var $body = $('body');
+        
+        // Toggle sidebar on button click (works for both topbar and sidebar buttons)
+        $sidebarToggle.on('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            $sidebar.toggleClass('sidebar-open');
+            $body.toggleClass('sidebar-active');
+            $sidebarToggle.toggleClass('active'); // Toggle all buttons
+        });
+        
+        // Close sidebar when clicking on overlay (mobile)
+        $body.on('click', function(e) {
+            if ($sidebar.hasClass('sidebar-open') && 
+                !$(e.target).closest('.custom-sidebar').length && 
+                !$(e.target).closest('.sidebar-toggle').length) {
+                $sidebar.removeClass('sidebar-open');
+                $body.removeClass('sidebar-active');
+                $sidebarToggle.removeClass('active');
+            }
+        });
+        
+        // Close sidebar when clicking on a link (mobile)
+        $('.sidebar-link').on('click', function() {
+            if (window.innerWidth <= 768) {
+                $sidebar.removeClass('sidebar-open');
+                $body.removeClass('sidebar-active');
+                $sidebarToggle.removeClass('active');
+            }
+        });
+        
+        // Handle window resize
+        var resizeTimeout;
+        $(window).on('resize', function() {
+            clearTimeout(resizeTimeout);
+            resizeTimeout = setTimeout(function() {
+                if (window.innerWidth > 768) {
+                    $sidebar.removeClass('sidebar-open');
+                    $body.removeClass('sidebar-active');
+                    $sidebarToggle.removeClass('active');
+                }
+            }, 250);
+        });
+        
     });
     
 })(jQuery);

@@ -347,6 +347,47 @@ footer {
 			justify-content: flex-end;
 		}
 	}
+
+	// Mobile Menu Toggle Button (in topbar)
+	.mobile-menu-toggle {
+		display: none; // Hidden on desktop
+		background: none;
+		border: none;
+		cursor: pointer;
+		padding: 0.5rem;
+		margin-right: 1rem;
+		flex-direction: column;
+		gap: 4px;
+		z-index: 1001;
+		position: relative;
+
+		span {
+			width: 22px;
+			height: 2px;
+			background-color: $text-white;
+			display: block;
+			border-radius: 2px;
+			transition: all 0.3s ease;
+		}
+
+		// Hamburger to X animation
+		&.active {
+			span:nth-child(1) {
+				transform: rotate(45deg) translate(5px, 5px);
+			}
+			span:nth-child(2) {
+				opacity: 0;
+			}
+			span:nth-child(3) {
+				transform: rotate(-45deg) translate(6px, -6px);
+			}
+		}
+
+		@media (max-width: 768px) {
+			display: flex; // Show on mobile
+		}
+	}
+
 	article {
 		h1 {
 			color: $text-white;
@@ -429,17 +470,32 @@ footer {
 	border: none;
 	cursor: pointer;
 	padding: 0.5rem;
-	display: flex;
+	display: none; // Hidden by default on desktop
 	flex-direction: column;
 	gap: 4px;
+	z-index: 1001;
+	position: relative;
 
 	span {
-		width: 20px;
+		width: 22px;
 		height: 2px;
 		background-color: $text-white;
 		display: block;
 		border-radius: 2px;
-		transition: all 0.3s;
+		transition: all 0.3s ease;
+	}
+
+	// Hamburger to X animation
+	&.active {
+		span:nth-child(1) {
+			transform: rotate(45deg) translate(5px, 5px);
+		}
+		span:nth-child(2) {
+			opacity: 0;
+		}
+		span:nth-child(3) {
+			transform: rotate(-45deg) translate(6px, -6px);
+		}
 	}
 }
 
@@ -547,22 +603,110 @@ footer {
 
 /* Responsive */
 @media (max-width: 768px) {
+	// Show overlay when sidebar is open
+	body.sidebar-active::before {
+		content: '';
+		position: fixed;
+		top: 0;
+		left: 0;
+		right: 0;
+		bottom: 0;
+		background-color: rgba(0, 0, 0, 0.5);
+		z-index: 999;
+		animation: fadeIn 0.3s ease;
+	}
+
+	@keyframes fadeIn {
+		from {
+			opacity: 0;
+		}
+		to {
+			opacity: 1;
+		}
+	}
+
 	.content-wrapper {
 		flex-direction: column;
 	}
 
 	.custom-sidebar {
-		flex: 1;
-		position: relative;
-		height: auto;
+		position: fixed;
+		top: 0;
+		left: -250px; // Hidden by default
+		height: 100vh;
+		width: 250px;
+		z-index: 1000;
+		transition: left 0.3s ease;
+		box-shadow: 2px 0 10px rgba(0, 0, 0, 0.3);
+
+		&.sidebar-open {
+			left: 0; // Slide in
+		}
+	}
+
+	.sidebar-toggle {
+		display: flex; // Show on mobile
+	}
+
+	.sidebar-header {
+		padding: 1rem 1.5rem;
 	}
 
 	.main-content {
-		padding: 1rem;
+		padding: 0;
+		width: 100%;
+
+		.topbar {
+			padding: 0.75rem 1rem;
+			flex-wrap: wrap;
+
+			.topbar-filters {
+				width: 100%;
+				gap: 8px;
+
+				.search-container {
+					max-width: 100%;
+					order: 2;
+					width: 100%;
+				}
+
+				.sidebar-dropdown-select {
+					font-size: 0.8rem;
+					padding: 0.5rem;
+					order: 1;
+				}
+			}
+
+			.top-menu {
+				font-size: 0.875rem;
+				margin-left: auto;
+			}
+		}
 	}
 
 	.page-header .page-title {
 		font-size: 1.25rem;
+		padding: 1rem;
+	}
+
+	.page-content {
+		padding: 1rem;
+	}
+
+	article {
+		padding: 0 1rem;
+
+		h1 {
+			font-size: 1.5rem;
+		}
+
+		h2 {
+			font-size: 1.25rem;
+		}
+
+		h3 {
+			font-size: 1.1rem;
+		}
 	}
 
 	.taxonomy-filter-wrapper {
@@ -571,6 +715,71 @@ footer {
 		select {
 			max-width: 100%;
 		}
+	}
+}
+
+// Small mobile devices
+@media (max-width: 480px) {
+	.mobile-menu-toggle {
+		margin-right: 0.5rem;
+
+		span {
+			width: 20px;
+		}
+	}
+
+	.main-content .topbar {
+		padding: 0.5rem 0.75rem;
+
+		.topbar-filters {
+			.sidebar-dropdown-select {
+				font-size: 0.75rem;
+			}
+		}
+
+		.top-menu {
+			font-size: 0.8rem;
+			gap: 6px;
+		}
+	}
+
+	.sidebar-brand {
+		font-size: 1.1rem;
+	}
+
+	.page-header .page-title {
+		font-size: 1.1rem;
+		padding: 0.75rem;
+	}
+
+	article {
+		h1 {
+			font-size: 1.25rem;
+		}
+
+		h2 {
+			font-size: 1.1rem;
+		}
+
+		h3 {
+			font-size: 1rem;
+		}
+	}
+}
+
+// Tablet breakpoint
+@media (min-width: 769px) and (max-width: 1024px) {
+	.custom-sidebar {
+		flex: 0 0 220px;
+	}
+
+	.sidebar-brand {
+		font-size: 1.1rem;
+	}
+
+	.sidebar-link {
+		font-size: 13px;
+		gap: 0.75rem;
 	}
 }
 
@@ -862,6 +1071,9 @@ select {
 .post-hero {
 	border-bottom: 1px solid #1d1d19;
 	padding: 12px 24px;
+	@include mobile {
+		padding: 12px 0px;
+	}
 }
 
 .post-hero-content {
@@ -941,10 +1153,6 @@ select {
 }
 
 @media (max-width: 768px) {
-	.post-hero {
-		padding: 1.5rem;
-	}
-
 	.quick-info-grid {
 		grid-template-columns: 1fr;
 	}
