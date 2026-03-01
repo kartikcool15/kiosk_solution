@@ -388,6 +388,41 @@ footer {
 		}
 	}
 
+	// Filter Toggle Button (in topbar)
+	.filter-toggle {
+		display: none; // Hidden on desktop
+		background: none;
+		border: none;
+		cursor: pointer;
+		padding: 0.5rem;
+		margin-left: auto;
+		color: $text-white;
+		z-index: 1001;
+		position: relative;
+		transition: all 0.3s ease;
+
+		svg {
+			display: block;
+			transition: transform 0.3s ease;
+		}
+
+		&.active {
+			color: $primary-color;
+
+			svg {
+				transform: rotate(180deg);
+			}
+		}
+
+		&:hover {
+			color: $primary-color;
+		}
+
+		@media (max-width: 768px) {
+			display: flex; // Show on mobile
+		}
+	}
+
 	article {
 		h1 {
 			color: $text-white;
@@ -659,10 +694,22 @@ footer {
 		.topbar {
 			padding: 0.75rem 1rem;
 			flex-wrap: wrap;
+			position: relative;
 
 			.topbar-filters {
 				width: 100%;
 				gap: 8px;
+				max-height: 0;
+				overflow: hidden;
+				opacity: 0;
+				transition: all 0.3s ease;
+				order: 3;
+
+				&.filters-open {
+					max-height: 500px;
+					opacity: 1;
+					margin-top: 0.75rem;
+				}
 
 				.search-container {
 					max-width: 100%;
@@ -680,6 +727,7 @@ footer {
 			.top-menu {
 				font-size: 0.875rem;
 				margin-left: auto;
+				order: 2;
 			}
 		}
 	}

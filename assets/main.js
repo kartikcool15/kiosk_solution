@@ -202,6 +202,41 @@
             }, 250);
         });
         
+        /**
+         * Mobile Filter Toggle
+         */
+        var $filterToggle = $('.filter-toggle');
+        var $topbarFilters = $('.topbar-filters');
+        
+        // Toggle filters on button click
+        $filterToggle.on('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            $topbarFilters.toggleClass('filters-open');
+            $(this).toggleClass('active');
+        });
+        
+        // Close filters when clicking outside (mobile)
+        $(document).on('click', function(e) {
+            if ($topbarFilters.hasClass('filters-open') && 
+                !$(e.target).closest('.topbar-filters').length && 
+                !$(e.target).closest('.filter-toggle').length) {
+                $topbarFilters.removeClass('filters-open');
+                $filterToggle.removeClass('active');
+            }
+        });
+        
+        // Handle window resize for filters
+        $(window).on('resize', function() {
+            clearTimeout(resizeTimeout);
+            resizeTimeout = setTimeout(function() {
+                if (window.innerWidth > 768) {
+                    $topbarFilters.removeClass('filters-open');
+                    $filterToggle.removeClass('active');
+                }
+            }, 250);
+        });
+        
     });
     
 })(jQuery);
