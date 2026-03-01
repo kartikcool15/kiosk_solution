@@ -73,7 +73,22 @@ class Kiosk_API_Fetcher
         ));
 
         if (is_wp_error($response)) {
-            error_log('Kiosk API Error: ' . $response->get_error_message());
+            $error_message = $response->get_error_message();
+            error_log('Kiosk API Error: ' . $error_message);
+            
+            // Log to Sentry
+            \Sentry\withScope(function (\Sentry\State\Scope $scope) use ($error_message, $url, $page, $per_page, $modified_after, $created_after) {
+                $scope->setContext('api_error', [
+                    'error_message' => $error_message,
+                    'url' => $url,
+                    'page' => $page,
+                    'per_page' => $per_page,
+                    'modified_after' => $modified_after,
+                    'created_after' => $created_after
+                ]);
+                \Sentry\captureMessage('API Fetch Failed: WP_Error', \Sentry\Severity::error());
+            });
+            
             return false;
         }
 
@@ -84,13 +99,42 @@ class Kiosk_API_Fetcher
         if ($response_code !== 200) {
             error_log('Kiosk API Response Code: ' . $response_code);
             error_log('Kiosk API Response Body: ' . substr($body, 0, 500));
+            
+            // Log to Sentry
+            \Sentry\withScope(function (\Sentry\State\Scope $scope) use ($response_code, $body, $url, $page, $per_page, $modified_after, $created_after) {
+                $scope->setContext('api_error', [
+                    'response_code' => $response_code,
+                    'response_body' => substr($body, 0, 500),
+                    'url' => $url,
+                    'page' => $page,
+                    'per_page' => $per_page,
+                    'modified_after' => $modified_after,
+                    'created_after' => $created_after
+                ]);
+                \Sentry\captureMessage('API Fetch Failed: Non-200 Response', \Sentry\Severity::error());
+            });
+            
             return false;
         }
 
         $posts = json_decode($body, true);
 
         if (json_last_error() !== JSON_ERROR_NONE) {
-            error_log('Kiosk API JSON Error: ' . json_last_error_msg());
+            $json_error = json_last_error_msg();
+            error_log('Kiosk API JSON Error: ' . $json_error);
+            
+            // Log to Sentry
+            \Sentry\withScope(function (\Sentry\State\Scope $scope) use ($json_error, $body, $url, $page, $per_page) {
+                $scope->setContext('api_error', [
+                    'json_error' => $json_error,
+                    'response_body' => substr($body, 0, 500),
+                    'url' => $url,
+                    'page' => $page,
+                    'per_page' => $per_page
+                ]);
+                \Sentry\captureMessage('API Fetch Failed: JSON Parse Error', \Sentry\Severity::error());
+            });
+            
             return false;
         }
 
@@ -116,15 +160,40 @@ class Kiosk_API_Fetcher
         ));
 
         if (is_wp_error($response)) {
+            $error_message = $response->get_error_message();
+            $api_base_url = $this->api_base_url;
+            
+            // Log to Sentry
+            \Sentry\withScope(function (\Sentry\State\Scope $scope) use ($error_message, $url, $api_base_url) {
+                $scope->setContext('api_error', [
+                    'error_message' => $error_message,
+                    'url' => $url,
+                    'api_base_url' => $api_base_url
+                ]);
+                \Sentry\captureMessage('API Connection Test Failed: WP_Error', \Sentry\Severity::error());
+            });
+            
             return array(
                 'success' => false,
-                'message' => 'Connection failed: ' . $response->get_error_message()
+                'message' => 'Connection failed: ' . $error_message
             );
         }
 
         $response_code = wp_remote_retrieve_response_code($response);
 
         if ($response_code !== 200) {
+            $api_base_url = $this->api_base_url;
+            
+            // Log to Sentry
+            \Sentry\withScope(function (\Sentry\State\Scope $scope) use ($response_code, $url, $api_base_url) {
+                $scope->setContext('api_error', [
+                    'response_code' => $response_code,
+                    'url' => $url,
+                    'api_base_url' => $api_base_url
+                ]);
+                \Sentry\captureMessage('API Connection Test Failed: Non-200 Response', \Sentry\Severity::error());
+            });
+            
             return array(
                 'success' => false,
                 'message' => 'API returned error code: ' . $response_code

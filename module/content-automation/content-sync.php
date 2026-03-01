@@ -61,6 +61,14 @@ class Kiosk_Content_Sync
                 'skipped' => 0
             ));
 
+            // Log to Sentry
+            \Sentry\logger()->info('Cron: Fetch Recently Created - No Posts Found', [
+                'timestamp' => current_time('mysql'),
+                'posts_returned' => 0,
+                'message' => 'No new posts to sync'
+            ]);
+            \Sentry\logger()->flush();
+
             return array(
                 'success' => true,
                 'message' => 'No new posts to sync'
@@ -114,6 +122,16 @@ class Kiosk_Content_Sync
             $this->chatgpt_processor->schedule_processing();
         }
 
+        // Log to Sentry
+        \Sentry\logger()->info('Cron: Fetch Recently Created', [
+            'timestamp' => current_time('mysql'),
+            'posts_returned' => is_array($posts) ? count($posts) : 0,
+            'posts_imported' => $imported_count,
+            'posts_skipped' => $skipped_count,
+            'queued_for_chatgpt' => $queued_count
+        ]);
+        \Sentry\logger()->flush();
+
         return array(
             'success' => true,
             'message' => 'Sync completed',
@@ -165,6 +183,14 @@ class Kiosk_Content_Sync
                 'updated' => 0,
                 'skipped' => 0
             ));
+
+            // Log to Sentry
+            \Sentry\logger()->info('Cron: Fetch Recently Modified - No Posts Found', [
+                'timestamp' => current_time('mysql'),
+                'posts_returned' => 0,
+                'message' => 'No modified posts to sync'
+            ]);
+            \Sentry\logger()->flush();
 
             return array(
                 'success' => true,
@@ -220,6 +246,17 @@ class Kiosk_Content_Sync
         if ($queued_count > 0) {
             $this->chatgpt_processor->schedule_processing();
         }
+
+        // Log to Sentry
+        \Sentry\logger()->info('Cron: Fetch Recently Modified', [
+            'timestamp' => current_time('mysql'),
+            'posts_returned' => is_array($posts) ? count($posts) : 0,
+            'posts_imported' => $imported_count,
+            'posts_updated' => $updated_count,
+            'posts_skipped' => $skipped_count,
+            'queued_for_chatgpt' => $queued_count
+        ]);
+        \Sentry\logger()->flush();
 
         return array(
             'success' => true,
@@ -421,6 +458,15 @@ class Kiosk_Content_Sync
                 'updated' => 0,
                 'skipped' => 0
             ));
+
+            // Log to Sentry
+            \Sentry\logger()->info('Cron: Fetch and Publish - No Posts Found', [
+                'timestamp' => current_time('mysql'),
+                'posts_returned' => 0,
+                'message' => 'No new posts to sync'
+            ]);
+            \Sentry\logger()->flush();
+
             return array('success' => true, 'message' => 'No new posts to sync');
         }
 
@@ -460,6 +506,18 @@ class Kiosk_Content_Sync
         if ($queued_count > 0) {
             $this->chatgpt_processor->schedule_processing();
         }
+
+        // Log to Sentry
+        \Sentry\logger()->info('Cron: Fetch and Publish Content', [
+            'timestamp' => current_time('mysql'),
+            'posts_returned' => is_array($posts) ? count($posts) : 0,
+            'posts_imported' => $imported_count,
+            'posts_updated' => $updated_count,
+            'posts_skipped' => $skipped_count,
+            'queued_for_chatgpt' => $queued_count,
+            'force_full' => $force_full
+        ]);
+        \Sentry\logger()->flush();
 
         return array(
             'success' => true,
