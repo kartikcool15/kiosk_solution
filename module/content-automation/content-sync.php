@@ -208,10 +208,15 @@ class Kiosk_Content_Sync
             $existing_post_id = $this->post_processor->post_exists_by_source_id($source_post_id);
 
             if ($existing_post_id) {
-                // Update existing post
-                $this->post_processor->update_post($existing_post_id, $post_data, $prepared_json);
-                $updated_count++;
-                $queued_count++;
+                // Try to update existing post (will skip if source not modified)
+                $was_updated = $this->post_processor->update_post($existing_post_id, $post_data, $prepared_json);
+                
+                if ($was_updated) {
+                    $updated_count++;
+                    $queued_count++;
+                } else {
+                    $skipped_count++;
+                }
             } else {
                 // Create new post
                 $new_post_id = $this->post_processor->create_post($post_data, $prepared_json);
@@ -480,13 +485,17 @@ class Kiosk_Content_Sync
             $existing_post_id = $this->post_processor->post_exists_by_source_id($source_post_id);
 
             if ($existing_post_id) {
-                // Update existing post
-                $this->post_processor->update_post($existing_post_id, $post_data, $prepared_json);
-                $updated_count++;
-                $queued_count++;
+                // Try to update existing post (will skip if source not modified)
+                $was_updated = $this->post_processor->update_post($existing_post_id, $post_data, $prepared_json);
                 
-                // Log update to Sentry for debugging
-                error_log("Kiosk Sync: Updated existing post - Source ID: {$source_post_id}, Local ID: {$existing_post_id}");
+                if ($was_updated) {
+                    $updated_count++;
+                    $queued_count++;
+                    error_log("Kiosk Sync: Updated existing post - Source ID: {$source_post_id}, Local ID: {$existing_post_id}");
+                } else {
+                    $skipped_count++;
+                    error_log("Kiosk Sync: Skipped update (no changes) - Source ID: {$source_post_id}, Local ID: {$existing_post_id}");
+                }
             } else {
                 // Create new post
                 $new_post_id = $this->post_processor->create_post($post_data, $prepared_json);
@@ -517,8 +526,12 @@ class Kiosk_Content_Sync
 
         // Collect source post IDs for logging
         $source_post_ids = array();
+        $source_modified_times = array();
         foreach ($posts as $post_data) {
             $source_post_ids[] = $post_data['id'];
+            if (isset($post_data['modified_gmt'])) {
+                $source_modified_times[$post_data['id']] = $post_data['modified_gmt'];
+            }
         }
 
         // Log to Sentry
@@ -527,6 +540,7 @@ class Kiosk_Content_Sync
             'last_sync_timestamp' => $modified_after,
             'posts_returned' => is_array($posts) ? count($posts) : 0,
             'source_post_ids' => implode(',', $source_post_ids),
+            'source_modified_times' => json_encode($source_modified_times),
             'posts_imported' => $imported_count,
             'posts_updated' => $updated_count,
             'posts_skipped' => $skipped_count,

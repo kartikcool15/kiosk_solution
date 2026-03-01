@@ -92,6 +92,11 @@ class Kiosk_Post_Processor
 
         // Save source post ID
         update_post_meta($new_post_id, 'kiosk_source_post_id', $post_data['id']);
+        
+        // Store source modified timestamp for future sync comparisons
+        if (isset($post_data['modified_gmt']) && !empty($post_data['modified_gmt'])) {
+            update_post_meta($new_post_id, 'kiosk_source_modified_gmt', $post_data['modified_gmt']);
+        }
 
         // Store complete cleaned ACF JSON for later ChatGPT processing
         update_post_meta($new_post_id, 'kiosk_raw_post_data', $prepared_json);
@@ -110,6 +115,18 @@ class Kiosk_Post_Processor
      */
     public function update_post($post_id, $post_data, $prepared_json)
     {
+        // Check if source post has actually been modified since last sync
+        $source_modified = isset($post_data['modified_gmt']) ? $post_data['modified_gmt'] : '';
+        $last_synced_modified = get_post_meta($post_id, 'kiosk_source_modified_gmt', true);
+        
+        // Skip update if source hasn't been modified since last sync
+        if (!empty($source_modified) && !empty($last_synced_modified)) {
+            if (strtotime($source_modified) <= strtotime($last_synced_modified)) {
+                error_log("Kiosk Sync: Skipping update - Source post {$post_data['id']} not modified (Source: {$source_modified}, Last: {$last_synced_modified})");
+                return false; // No update needed
+            }
+        }
+        
         // Use ACF post_title if available
         $title_to_use = isset($post_data['acf']['post_title']) && !empty($post_data['acf']['post_title'])
             ? $post_data['acf']['post_title']
@@ -139,9 +156,16 @@ class Kiosk_Post_Processor
         // Update meta: raw data for ChatGPT processing
         update_post_meta($post_id, 'kiosk_raw_post_data', $prepared_json);
         update_post_meta($post_id, 'kiosk_processing_status', 'pending');
+        
+        // Store the source post's modified timestamp to prevent re-updating
+        if (!empty($source_modified)) {
+            update_post_meta($post_id, 'kiosk_source_modified_gmt', $source_modified);
+        }
 
         // Clear old ChatGPT data to force re-processing
         delete_post_meta($post_id, 'kiosk_chatgpt_json');
+        
+        error_log("Kiosk Sync: Updated post {$post_id} - Source modified: {$source_modified}");
 
         return true;
     }
