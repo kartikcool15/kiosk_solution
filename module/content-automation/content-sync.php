@@ -441,7 +441,9 @@ class Kiosk_Content_Sync
             $modified_after = $last_sync_data['timestamp_iso'];
         }
 
-        $posts = $this->api_fetcher->fetch_posts(1, $per_page, $categories, $modified_after, $modified_after);
+        // Only use modified_after (not created_after) to catch both new and updated posts
+        // The modified_after parameter will include newly created posts since they're "modified" when created
+        $posts = $this->api_fetcher->fetch_posts(1, $per_page, $categories, $modified_after, '');
 
         $imported_count = 0;
         $updated_count = 0;
@@ -482,12 +484,18 @@ class Kiosk_Content_Sync
                 $this->post_processor->update_post($existing_post_id, $post_data, $prepared_json);
                 $updated_count++;
                 $queued_count++;
+                
+                // Log update to Sentry for debugging
+                error_log("Kiosk Sync: Updated existing post - Source ID: {$source_post_id}, Local ID: {$existing_post_id}");
             } else {
                 // Create new post
                 $new_post_id = $this->post_processor->create_post($post_data, $prepared_json);
                 if ($new_post_id) {
                     $imported_count++;
                     $queued_count++;
+                    
+                    // Log import to Sentry for debugging
+                    error_log("Kiosk Sync: Created new post - Source ID: {$source_post_id}, Local ID: {$new_post_id}");
                 }
             }
         }
@@ -507,10 +515,18 @@ class Kiosk_Content_Sync
             $this->chatgpt_processor->schedule_processing();
         }
 
+        // Collect source post IDs for logging
+        $source_post_ids = array();
+        foreach ($posts as $post_data) {
+            $source_post_ids[] = $post_data['id'];
+        }
+
         // Log to Sentry
         \Sentry\logger()->info('Cron: Fetch and Publish Content', [
             'timestamp' => current_time('mysql'),
+            'last_sync_timestamp' => $modified_after,
             'posts_returned' => is_array($posts) ? count($posts) : 0,
+            'source_post_ids' => implode(',', $source_post_ids),
             'posts_imported' => $imported_count,
             'posts_updated' => $updated_count,
             'posts_skipped' => $skipped_count,
