@@ -41,7 +41,7 @@
                     if (response.success) {
                         $response.removeClass('loading error').addClass('success');
                         var message = '<strong>✓ Recently Created Sync Complete!</strong><br>';
-                        message += 'New posts added: ' + (response.data.added || 0) + '<br>';
+                        message += 'New posts added: ' + (response.data.imported || 0) + '<br>';
                         message += 'Posts skipped (exist): ' + (response.data.skipped || 0) + '<br>';
                         message += 'Queued for ChatGPT: ' + (response.data.queued_for_processing || 0);
                         $response.html(message);
@@ -96,7 +96,7 @@
                         $response.removeClass('loading error').addClass('success');
                         var message = '<strong>✓ Recently Modified Sync Complete!</strong><br>';
                         message += 'Posts updated: ' + (response.data.updated || 0) + '<br>';
-                        message += 'New posts added: ' + (response.data.added || 0) + '<br>';
+                        message += 'New posts added: ' + (response.data.imported || 0) + '<br>';
                         message += 'Posts skipped: ' + (response.data.skipped || 0) + '<br>';
                         message += 'Queued for ChatGPT: ' + (response.data.queued_for_processing || 0);
                         $response.html(message);
