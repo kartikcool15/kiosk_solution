@@ -342,7 +342,7 @@ class Kiosk_Admin_Settings
                                 <span class="value" style="color: #2271b1;">
                                     ✓ <?php echo sprintf(__('Next sync scheduled at: %s (in %s)', 'kiosk'), 
                                         date('Y-m-d H:i:s', $next_cron),
-                                        human_time_diff($next_cron, current_time('timestamp'))
+                                        human_time_diff(current_time('timestamp'), $next_cron)
                                     ); ?>
                                 </span>
                             <?php else: ?>

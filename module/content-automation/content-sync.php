@@ -77,7 +77,17 @@ class Kiosk_Content_Sync
             'time' => current_time('mysql'),
             'timestamp' => current_time('timestamp'),
             'timestamp_iso' => current_time('c'), // ISO 8601 format for API
-            'added' => $imported_count,
+            'imported' => $imported_count,
+            'skipped' => $skipped_count
+        ));
+
+        // Also update main sync tracker for admin display
+        update_option('kiosk_last_sync', array(
+            'time' => current_time('mysql'),
+            'timestamp' => current_time('timestamp'),
+            'timestamp_iso' => current_time('c'),
+            'imported' => $imported_count,
+            'updated' => 0,
             'skipped' => $skipped_count
         ));
 
@@ -89,7 +99,7 @@ class Kiosk_Content_Sync
         return array(
             'success' => true,
             'message' => 'Sync completed',
-            'added' => $imported_count,
+            'imported' => $imported_count,
             'skipped' => $skipped_count,
             'queued_for_processing' => $queued_count
         );
@@ -155,7 +165,17 @@ class Kiosk_Content_Sync
             'timestamp' => current_time('timestamp'),
             'timestamp_iso' => current_time('c'), // ISO 8601 format for API
             'updated' => $updated_count,
-            'added' => $imported_count,
+            'imported' => $imported_count,
+            'skipped' => $skipped_count
+        ));
+
+        // Also update main sync tracker for admin display
+        update_option('kiosk_last_sync', array(
+            'time' => current_time('mysql'),
+            'timestamp' => current_time('timestamp'),
+            'timestamp_iso' => current_time('c'),
+            'imported' => $imported_count,
+            'updated' => $updated_count,
             'skipped' => $skipped_count
         ));
 
@@ -168,7 +188,7 @@ class Kiosk_Content_Sync
             'success' => true,
             'message' => 'Sync completed',
             'updated' => $updated_count,
-            'added' => $imported_count,
+            'imported' => $imported_count,
             'skipped' => $skipped_count,
             'queued_for_processing' => $queued_count
         );
@@ -385,7 +405,7 @@ class Kiosk_Content_Sync
             'time' => current_time('mysql'),
             'timestamp' => current_time('timestamp'),
             'timestamp_iso' => current_time('c'),
-            'added' => $imported_count,
+            'imported' => $imported_count,
             'updated' => $updated_count,
             'skipped' => $skipped_count
         ));
@@ -398,7 +418,7 @@ class Kiosk_Content_Sync
         return array(
             'success' => true,
             'message' => 'Sync completed',
-            'added' => $imported_count,
+            'imported' => $imported_count,
             'updated' => $updated_count,
             'skipped' => $skipped_count,
             'queued_for_processing' => $queued_count
