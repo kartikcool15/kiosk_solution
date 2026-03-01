@@ -402,48 +402,6 @@ class Kiosk_Admin_Settings
                     <div id="kiosk-sync-response" class="kiosk-response" style="display:none;"></div>
                 </div>
 
-                <!-- Custom Fields Info -->
-                <div class="kiosk-card full-width">
-                    <h2><?php _e('Custom Fields Available', 'kiosk'); ?></h2>
-                    <p><?php _e('The following custom fields are automatically extracted and stored for each imported post:', 'kiosk'); ?></p>
-
-                    <div class="kiosk-fields-grid">
-                        <div class="field-info">
-                            <strong><?php _e('Overview', 'kiosk'); ?></strong>
-                            <code>kiosk_overview</code>
-                        </div>
-                        <div class="field-info">
-                            <strong><?php _e('Important Dates', 'kiosk'); ?></strong>
-                            <code>kiosk_important_dates</code>
-                        </div>
-                        <div class="field-info">
-                            <strong><?php _e('Eligibility', 'kiosk'); ?></strong>
-                            <code>kiosk_eligibility</code>
-                        </div>
-                        <div class="field-info">
-                            <strong><?php _e('Required Documents', 'kiosk'); ?></strong>
-                            <code>kiosk_required_documents</code>
-                        </div>
-                        <div class="field-info">
-                            <strong><?php _e('Direct Apply Link', 'kiosk'); ?></strong>
-                            <code>kiosk_apply_link</code>
-                        </div>
-                        <div class="field-info">
-                            <strong><?php _e('Official Notification PDF', 'kiosk'); ?></strong>
-                            <code>kiosk_notification_pdf</code>
-                        </div>
-                        <div class="field-info gold">
-                            <strong><?php _e('Form Filling Instructions', 'kiosk'); ?> 🏆</strong>
-                            <code>kiosk_form_instructions</code>
-                        </div>
-                    </div>
-
-                    <p class="description">
-                        <?php _e('Use these meta keys in your templates with', 'kiosk'); ?>
-                        <code>get_post_meta($post_id, 'meta_key', true)</code>
-                    </p>
-                </div>
-
             </div>
         </div>
 <?php
