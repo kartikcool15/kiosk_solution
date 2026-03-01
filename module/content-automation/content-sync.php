@@ -47,7 +47,7 @@ class Kiosk_Content_Sync
             update_option('kiosk_last_created_sync', array(
                 'time' => current_time('mysql'),
                 'timestamp' => current_time('timestamp'),
-                'timestamp_iso' => current_time('c'),
+                'timestamp_iso' => gmdate('Y-m-d\TH:i:s'),
                 'imported' => 0,
                 'skipped' => 0
             ));
@@ -55,7 +55,7 @@ class Kiosk_Content_Sync
             update_option('kiosk_last_sync', array(
                 'time' => current_time('mysql'),
                 'timestamp' => current_time('timestamp'),
-                'timestamp_iso' => current_time('c'),
+                'timestamp_iso' => gmdate('Y-m-d\\TH:i:s'),
                 'imported' => 0,
                 'updated' => 0,
                 'skipped' => 0
@@ -102,7 +102,7 @@ class Kiosk_Content_Sync
         update_option('kiosk_last_created_sync', array(
             'time' => current_time('mysql'),
             'timestamp' => current_time('timestamp'),
-            'timestamp_iso' => current_time('c'), // ISO 8601 format for API
+            'timestamp_iso' => gmdate('Y-m-d\TH:i:s'),
             'imported' => $imported_count,
             'skipped' => $skipped_count
         ));
@@ -111,7 +111,7 @@ class Kiosk_Content_Sync
         update_option('kiosk_last_sync', array(
             'time' => current_time('mysql'),
             'timestamp' => current_time('timestamp'),
-            'timestamp_iso' => current_time('c'),
+            'timestamp_iso' => gmdate('Y-m-d\TH:i:s'),
             'imported' => $imported_count,
             'updated' => 0,
             'skipped' => $skipped_count
@@ -169,7 +169,7 @@ class Kiosk_Content_Sync
             update_option('kiosk_last_modified_sync', array(
                 'time' => current_time('mysql'),
                 'timestamp' => current_time('timestamp'),
-                'timestamp_iso' => current_time('c'),
+                'timestamp_iso' => gmdate('Y-m-d\TH:i:s'),
                 'updated' => 0,
                 'imported' => 0,
                 'skipped' => 0
@@ -178,7 +178,7 @@ class Kiosk_Content_Sync
             update_option('kiosk_last_sync', array(
                 'time' => current_time('mysql'),
                 'timestamp' => current_time('timestamp'),
-                'timestamp_iso' => current_time('c'),
+                'timestamp_iso' => gmdate('Y-m-d\\TH:i:s'),
                 'imported' => 0,
                 'updated' => 0,
                 'skipped' => 0
@@ -226,7 +226,7 @@ class Kiosk_Content_Sync
         update_option('kiosk_last_modified_sync', array(
             'time' => current_time('mysql'),
             'timestamp' => current_time('timestamp'),
-            'timestamp_iso' => current_time('c'), // ISO 8601 format for API
+            'timestamp_iso' => gmdate('Y-m-d\TH:i:s'),
             'updated' => $updated_count,
             'imported' => $imported_count,
             'skipped' => $skipped_count
@@ -236,7 +236,7 @@ class Kiosk_Content_Sync
         update_option('kiosk_last_sync', array(
             'time' => current_time('mysql'),
             'timestamp' => current_time('timestamp'),
-            'timestamp_iso' => current_time('c'),
+            'timestamp_iso' => gmdate('Y-m-d\TH:i:s'),
             'imported' => $imported_count,
             'updated' => $updated_count,
             'skipped' => $skipped_count
@@ -453,7 +453,7 @@ class Kiosk_Content_Sync
             update_option('kiosk_last_sync', array(
                 'time' => current_time('mysql'),
                 'timestamp' => current_time('timestamp'),
-                'timestamp_iso' => current_time('c'),
+                'timestamp_iso' => gmdate('Y-m-d\\TH:i:s'),
                 'imported' => 0,
                 'updated' => 0,
                 'skipped' => 0
@@ -496,7 +496,7 @@ class Kiosk_Content_Sync
         update_option('kiosk_last_sync', array(
             'time' => current_time('mysql'),
             'timestamp' => current_time('timestamp'),
-            'timestamp_iso' => current_time('c'),
+            'timestamp_iso' => gmdate('Y-m-d\TH:i:s'),
             'imported' => $imported_count,
             'updated' => $updated_count,
             'skipped' => $skipped_count
