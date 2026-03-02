@@ -84,14 +84,6 @@ function kiosk_add_resource_hints($urls, $relation_type)
             'href' => 'https://cdn.jsdelivr.net',
             'crossorigin'
         );
-        $urls[] = array(
-            'href' => 'https://fonts.googleapis.com',
-            'crossorigin'
-        );
-        $urls[] = array(
-            'href' => 'https://fonts.gstatic.com',
-            'crossorigin'
-        );
     }
     return $urls;
 }
