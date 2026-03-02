@@ -73,11 +73,20 @@ function kiosk_enqueue_scripts()
         wp_get_theme()->get('Version'), 
         array('strategy' => 'defer', 'in_footer' => true)
     );
-    
-    // Remove jQuery Migrate
-    wp_dequeue_script('jquery-migrate');
 }
 add_action('wp_enqueue_scripts', 'kiosk_enqueue_scripts');
+
+// Remove jQuery Migrate properly
+function kiosk_remove_jquery_migrate($scripts)
+{
+    if (!is_admin() && isset($scripts->registered['jquery'])) {
+        $script = $scripts->registered['jquery'];
+        if ($script->deps) {
+            $script->deps = array_diff($script->deps, array('jquery-migrate'));
+        }
+    }
+}
+add_action('wp_default_scripts', 'kiosk_remove_jquery_migrate');
 
 // Add resource hints for external domains
 function kiosk_add_resource_hints($urls, $relation_type)
