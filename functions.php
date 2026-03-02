@@ -5,10 +5,10 @@ require_once get_template_directory() . '/vendor/autoload.php';
 
 // Initialize Sentry for error tracking
 \Sentry\init([
-  'dsn' => 'https://30404e9840be130a1892a9cff66a0b12@o4510420447854592.ingest.us.sentry.io/4510964637958144',
-  'enable_logs' => true,
-  'environment' => wp_get_environment_type(), // production, staging, development
-  'release' => wp_get_theme()->get('Version'),
+    'dsn' => 'https://30404e9840be130a1892a9cff66a0b12@o4510420447854592.ingest.us.sentry.io/4510964637958144',
+    'enable_logs' => true,
+    'environment' => wp_get_environment_type(), // production, staging, development
+    'release' => wp_get_theme()->get('Version'),
 ]);
 
 // try {
@@ -17,7 +17,8 @@ require_once get_template_directory() . '/vendor/autoload.php';
 //   \Sentry\captureException($exception);
 // }
 
-function kiosk_theme_setup() {
+function kiosk_theme_setup()
+{
     // Add theme support for various features
     add_theme_support('post-thumbnails');
     add_theme_support('title-tag');
@@ -41,67 +42,71 @@ function kiosk_theme_setup() {
 }
 add_action('after_setup_theme', 'kiosk_theme_setup');
 
-function kiosk_enqueue_styles() {
-    wp_enqueue_style('kiosk-style', get_stylesheet_uri(), array(), '1.0.0');
+function kiosk_enqueue_styles()
+{
+    wp_enqueue_style('kiosk-style', get_stylesheet_uri(), array(), wp_get_theme()->get('Version'));
 }
 add_action('wp_enqueue_scripts', 'kiosk_enqueue_styles');
 
-function kiosk_enqueue_scripts() {
-    // Enqueue SlimSelect library
+function kiosk_enqueue_scripts()
+{
+    // Enqueue SlimSelect library with specific version for caching
     wp_enqueue_style(
         'slimselect-css',
-        'https://cdn.jsdelivr.net/npm/slim-select@latest/dist/slimselect.css',
+        'https://cdn.jsdelivr.net/npm/slim-select@2.8.2/dist/slimselect.min.css',
         array(),
-        null
+        '2.8.2'
     );
 
     wp_enqueue_script(
         'slimselect-js',
-        'https://cdn.jsdelivr.net/npm/slim-select@latest/dist/slimselect.min.js',
+        'https://cdn.jsdelivr.net/npm/slim-select@2.8.2/dist/slimselect.min.js',
         array(),
-        null,
-        true
+        '2.8.2',
+        array('strategy' => 'defer', 'in_footer' => true)
     );
 
-    wp_enqueue_script('kiosk-main', get_template_directory_uri() . '/assets/main.js', array('jquery', 'slimselect-js'), '1.0.0', true);
+    wp_enqueue_script(
+        'kiosk-main', 
+        get_template_directory_uri() . '/assets/main.js', 
+        array('jquery', 'slimselect-js'), 
+        wp_get_theme()->get('Version'), 
+        array('strategy' => 'defer', 'in_footer' => true)
+    );
 }
 add_action('wp_enqueue_scripts', 'kiosk_enqueue_scripts');
 
-// Filter by education taxonomy - Now using taxonomy archives (taxonomy-education.php)
-// This function is no longer needed but kept for reference
-/*
-function kiosk_filter_by_education($query) {
-    // Only on frontend for latest-job category or homepage
-    if (!is_admin() && $query->is_main_query() && (is_category('latest-job') || is_home() || is_front_page())) {
-        // Check if education filter is set
-        if (isset($_GET['education']) && !empty($_GET['education'])) {
-            $education_term = $_GET['education'];
-            
-            // Add tax query
-            $tax_query = array(
-                array(
-                    'taxonomy' => 'education',
-                    'field'    => 'slug',
-                    'terms'    => $education_term,
-                ),
-            );
-            
-            $query->set('tax_query', $tax_query);
-        }
+// Add resource hints for external domains
+function kiosk_add_resource_hints($urls, $relation_type)
+{
+    if ($relation_type === 'preconnect') {
+        $urls[] = array(
+            'href' => 'https://cdn.jsdelivr.net',
+            'crossorigin'
+        );
+        $urls[] = array(
+            'href' => 'https://fonts.googleapis.com',
+            'crossorigin'
+        );
+        $urls[] = array(
+            'href' => 'https://fonts.gstatic.com',
+            'crossorigin'
+        );
     }
+    return $urls;
 }
-add_action('pre_get_posts', 'kiosk_filter_by_education');
-*/
+add_filter('wp_resource_hints', 'kiosk_add_resource_hints', 10, 2);
 
 /**
  * Bulk process existing posts to assign education taxonomy
  * Run this once via URL: yoursite.com/?process_education_taxonomy=1
  */
-function kiosk_process_existing_education_taxonomy() {
+function kiosk_process_existing_education_taxonomy()
+{
     if (!isset($_GET['process_education_taxonomy']) || !current_user_can('manage_options')) {
         return;
     }
-    
+
     // Get all posts in latest-job category
     $args = array(
         'category_name' => 'latest-job',
@@ -109,57 +114,57 @@ function kiosk_process_existing_education_taxonomy() {
         'post_status' => 'publish',
         'fields' => 'ids',
     );
-    
+
     $post_ids = get_posts($args);
-    
+
     $processed = 0;
     $updated = 0;
     $skipped = 0;
-    
+
     foreach ($post_ids as $post_id) {
         $processed++;
-        
+
         // Get ChatGPT JSON
         $chatgpt_json = get_post_meta($post_id, 'kiosk_chatgpt_json', true);
-        
+
         if (empty($chatgpt_json)) {
             $skipped++;
             continue;
         }
-        
+
         $chatgpt_data = json_decode($chatgpt_json, true);
-        
+
         if (!is_array($chatgpt_data) || empty($chatgpt_data['education'])) {
             $skipped++;
             continue;
         }
-        
+
         $education_values = $chatgpt_data['education'];
-        
+
         // Ensure it's an array
         if (!is_array($education_values)) {
             $education_values = array($education_values);
         }
-        
+
         // Get or create terms for each education value
         $term_ids = array();
         foreach ($education_values as $education_name) {
             $education_name = trim($education_name);
             $education_name = sanitize_text_field($education_name);
-            
+
             if (empty($education_name)) {
                 continue;
             }
-            
+
             // Check if term already exists
             $term = get_term_by('name', $education_name, 'education');
-            
+
             if ($term && !is_wp_error($term)) {
                 $term_ids[] = $term->term_id;
             } else {
                 // Create new term
                 $result = wp_insert_term($education_name, 'education');
-                
+
                 if (!is_wp_error($result)) {
                     $term_ids[] = $result['term_id'];
                 } elseif (isset($result->error_data['term_exists'])) {
@@ -167,7 +172,7 @@ function kiosk_process_existing_education_taxonomy() {
                 }
             }
         }
-        
+
         if (!empty($term_ids)) {
             $result = wp_set_object_terms($post_id, $term_ids, 'education', false);
             if (!is_wp_error($result)) {
@@ -175,7 +180,7 @@ function kiosk_process_existing_education_taxonomy() {
             }
         }
     }
-    
+
     // Display results
     wp_die(
         sprintf(
@@ -197,7 +202,8 @@ add_action('init', 'kiosk_process_existing_education_taxonomy');
  * Get post dates with priority to custom fields over JSON
  * This allows manual edits to custom fields to override ChatGPT JSON values
  */
-function kiosk_get_post_dates($post_id) {
+function kiosk_get_post_dates($post_id)
+{
     $dates = array(
         'start_date' => 'N/A',
         'last_date' => 'N/A',
@@ -234,7 +240,7 @@ function kiosk_get_post_dates($post_id) {
             $data = json_decode($json_data, true);
             if (is_array($data) && !empty($data['dates'])) {
                 $json_dates = $data['dates'];
-                
+
                 // Use JSON dates only if custom fields are not set
                 if ($dates['start_date'] === 'N/A' && !empty($json_dates['start_date'])) {
                     $dates['start_date'] = $json_dates['start_date'];
@@ -276,25 +282,26 @@ function kiosk_get_post_dates($post_id) {
  * @param string $date Date in YYYY-MM-DD format
  * @return string Formatted date
  */
-function kiosk_format_date_display($date) {
+function kiosk_format_date_display($date)
+{
     if ($date === 'N/A' || empty($date)) {
         return $date;
     }
-    
+
     $date_timestamp = strtotime($date);
     if (!$date_timestamp) {
         return $date;
     }
-    
+
     $today = strtotime(date('Y-m-d', current_time('timestamp')));
     $tomorrow = strtotime('+1 day', $today);
-    
+
     if (date('Y-m-d', $date_timestamp) === date('Y-m-d', $today)) {
         return 'Today';
     } elseif (date('Y-m-d', $date_timestamp) === date('Y-m-d', $tomorrow)) {
         return 'Tomorrow';
     }
-    
+
     return $date;
 }
 
@@ -302,11 +309,12 @@ function kiosk_format_date_display($date) {
  * Bulk sync dates from ChatGPT JSON to custom fields for all existing posts
  * Run this once via URL: yoursite.com/?sync_dates_to_custom_fields=1
  */
-function kiosk_bulk_sync_dates_to_custom_fields() {
+function kiosk_bulk_sync_dates_to_custom_fields()
+{
     if (!isset($_GET['sync_dates_to_custom_fields']) || !current_user_can('manage_options')) {
         return;
     }
-    
+
     // Get all posts
     $args = array(
         'post_type' => 'post',
@@ -314,75 +322,75 @@ function kiosk_bulk_sync_dates_to_custom_fields() {
         'post_status' => 'publish',
         'fields' => 'ids',
     );
-    
+
     $post_ids = get_posts($args);
-    
+
     $processed = 0;
     $updated = 0;
     $skipped = 0;
-    
+
     foreach ($post_ids as $post_id) {
         $processed++;
-        
+
         // Get ChatGPT JSON
         $chatgpt_json = get_post_meta($post_id, 'kiosk_chatgpt_json', true);
-        
+
         if (empty($chatgpt_json)) {
             $skipped++;
             continue;
         }
-        
+
         $chatgpt_data = json_decode($chatgpt_json, true);
-        
+
         if (!is_array($chatgpt_data) || empty($chatgpt_data['dates'])) {
             $skipped++;
             continue;
         }
-        
+
         $dates = $chatgpt_data['dates'];
         $fields_updated = 0;
-        
+
         // Sync each date field
         if (!empty($dates['start_date'])) {
             update_post_meta($post_id, 'kiosk_start_date', sanitize_text_field($dates['start_date']));
             $fields_updated++;
         }
-        
+
         if (!empty($dates['last_date'])) {
             update_post_meta($post_id, 'kiosk_last_date', sanitize_text_field($dates['last_date']));
             $fields_updated++;
         }
-        
+
         if (!empty($dates['exam_date'])) {
             update_post_meta($post_id, 'kiosk_exam_date', sanitize_text_field($dates['exam_date']));
             $fields_updated++;
         }
-        
+
         if (!empty($dates['admit_card_date'])) {
             update_post_meta($post_id, 'kiosk_admit_card_date', sanitize_text_field($dates['admit_card_date']));
             $fields_updated++;
         }
-        
+
         if (!empty($dates['result_date'])) {
             update_post_meta($post_id, 'kiosk_result_date', sanitize_text_field($dates['result_date']));
             $fields_updated++;
         }
-        
+
         if (!empty($dates['counselling_date'])) {
             update_post_meta($post_id, 'kiosk_counselling_date', sanitize_text_field($dates['counselling_date']));
             $fields_updated++;
         }
-        
+
         if (!empty($dates['interview_date'])) {
             update_post_meta($post_id, 'kiosk_interview_date', sanitize_text_field($dates['interview_date']));
             $fields_updated++;
         }
-        
+
         if ($fields_updated > 0) {
             $updated++;
         }
     }
-    
+
     // Display results
     wp_die(
         sprintf(
@@ -412,19 +420,20 @@ require_once get_template_directory() . '/module/image-tools/image-converter.php
 /**
  * AJAX handler for dynamic post search
  */
-function kiosk_ajax_search_posts() {
+function kiosk_ajax_search_posts()
+{
     // Verify nonce for security
     check_ajax_referer('kiosk_search_nonce', 'nonce');
-    
+
     // Get search query
     $search_query = isset($_POST['search']) ? sanitize_text_field($_POST['search']) : '';
-    
+
     // Return empty if less than 3 characters
     if (strlen($search_query) < 3) {
         wp_send_json_success(array('posts' => array()));
         return;
     }
-    
+
     // Query posts
     $args = array(
         'post_type' => 'post',
@@ -433,15 +442,15 @@ function kiosk_ajax_search_posts() {
         's' => $search_query,
         'orderby' => 'relevance'
     );
-    
+
     $query = new WP_Query($args);
     $results = array();
-    
+
     if ($query->have_posts()) {
         while ($query->have_posts()) {
             $query->the_post();
             $post_id = get_the_ID();
-            
+
             // Get categories
             $categories = get_the_category();
             $category_names = array();
@@ -453,12 +462,12 @@ function kiosk_ajax_search_posts() {
                     );
                 }
             }
-            
+
             // Get post title from JSON if available
             $json_data = get_post_meta($post_id, 'kiosk_chatgpt_json', true);
             $data = json_decode($json_data, true);
             $post_title = !empty($data['post_title']) ? $data['post_title'] : get_the_title();
-            
+
             $results[] = array(
                 'id' => $post_id,
                 'title' => $post_title,
@@ -468,7 +477,7 @@ function kiosk_ajax_search_posts() {
         }
         wp_reset_postdata();
     }
-    
+
     wp_send_json_success(array('posts' => $results));
 }
 add_action('wp_ajax_kiosk_search_posts', 'kiosk_ajax_search_posts');
@@ -477,12 +486,11 @@ add_action('wp_ajax_nopriv_kiosk_search_posts', 'kiosk_ajax_search_posts');
 /**
  * Localize script with AJAX URL and nonce
  */
-function kiosk_localize_search_script() {
+function kiosk_localize_search_script()
+{
     wp_localize_script('kiosk-main', 'kioskSearch', array(
         'ajaxurl' => admin_url('admin-ajax.php'),
         'nonce' => wp_create_nonce('kiosk_search_nonce')
     ));
 }
 add_action('wp_enqueue_scripts', 'kiosk_localize_search_script');
-?>
-
