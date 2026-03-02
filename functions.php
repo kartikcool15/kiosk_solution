@@ -73,6 +73,9 @@ function kiosk_enqueue_scripts()
         wp_get_theme()->get('Version'), 
         array('strategy' => 'defer', 'in_footer' => true)
     );
+    
+    // Remove jQuery Migrate
+    wp_dequeue_script('jquery-migrate');
 }
 add_action('wp_enqueue_scripts', 'kiosk_enqueue_scripts');
 
