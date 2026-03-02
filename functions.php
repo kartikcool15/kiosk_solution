@@ -99,6 +99,7 @@ function kiosk_remove_block_library_css()
     wp_dequeue_style('wp-block-library-theme');
     wp_dequeue_style('wc-block-style'); // WooCommerce blocks if present
     wp_dequeue_style('global-styles'); // Global styles
+    wp_dequeue_style('global-styles-inline-css'); // Inline global styles
 }
 add_action('wp_enqueue_scripts', 'kiosk_remove_block_library_css', 100);
 
