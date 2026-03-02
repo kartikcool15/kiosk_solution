@@ -76,7 +76,7 @@ function kiosk_enqueue_scripts()
 }
 add_action('wp_enqueue_scripts', 'kiosk_enqueue_scripts');
 
-// Remove jQuery Migrate properly
+// Remove jQuery Migrate and move jQuery to footer
 function kiosk_remove_jquery_migrate($scripts)
 {
     if (!is_admin() && isset($scripts->registered['jquery'])) {
@@ -84,6 +84,8 @@ function kiosk_remove_jquery_migrate($scripts)
         if ($script->deps) {
             $script->deps = array_diff($script->deps, array('jquery-migrate'));
         }
+        // Move jQuery to footer
+        $scripts->registered['jquery-core']->extra['group'] = 1;
     }
 }
 add_action('wp_default_scripts', 'kiosk_remove_jquery_migrate');
