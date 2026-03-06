@@ -1,6 +1,7 @@
 <aside id="custom-sidebar" class="custom-sidebar">
     <div class="sidebar-header">
-        <h2 class="sidebar-brand">Govt Jobs Exams</h2>
+        <img src="https://govtjobsexams.com/wp-content/uploads/2026/03/Bold-Logo-with-Checkmark-and-Building-Silhouette-1.png">
+        <!-- <h2 class="sidebar-brand">Govt Jobs Exams</h2> -->
         <button class="sidebar-toggle">
             <span></span>
             <span></span>

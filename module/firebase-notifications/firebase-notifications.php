@@ -604,18 +604,40 @@ class Firebase_Notifications {
      * Send notification when post is published
      */
     public function on_post_status_change($new_status, $old_status, $post) {
-        error_log('🔔 FCM: Post status change detected - New: ' . $new_status . ', Old: ' . $old_status . ', Post ID: ' . $post->ID);
+        error_log('🔔 FCM: Post status change detected - New: ' . $new_status . ', Old: ' . $old_status . ', Post ID: ' . $post->ID . ', Type: ' . $post->post_type);
         
-        // Only send for published posts
-        if ($new_status !== 'publish' || $old_status === 'publish') {
-            error_log('🔔 FCM: Skipping - not a new publish (new: ' . $new_status . ', old: ' . $old_status . ')');
+        // Only send notifications for NEW publishes (not updates)
+        if ($new_status !== 'publish') {
+            error_log('🔔 FCM: Skipping - new status is not publish: ' . $new_status);
             return;
         }
         
-        // Only for specific post types
+        // Skip if post was already published (this is an update, not a new publish)
+        if ($old_status === 'publish') {
+            error_log('🔔 FCM: Skipping - post already published (this is an update)');
+            return;
+        }
+        
+        // Only for specific post types (skip revisions, auto-drafts, etc.)
         if (!in_array($post->post_type, array('post'))) {
             error_log('🔔 FCM: Skipping - wrong post type: ' . $post->post_type);
             return;
+        }
+        
+        // Skip revisions
+        if (wp_is_post_revision($post->ID)) {
+            error_log('🔔 FCM: Skipping - this is a revision');
+            return;
+        }
+        
+        // Skip auto-drafts
+        if ($old_status === 'auto-draft') {
+            // Allow only if it's a real publish, not an auto-save
+            if (!isset($_POST['publish']) && !isset($_POST['save'])) {
+                error_log('🔔 FCM: Skipping - auto-draft without explicit publish action');
+                // Actually, let's allow auto-draft -> publish, this is normal
+                // return;
+            }
         }
         
         global $wpdb;
@@ -632,7 +654,7 @@ class Firebase_Notifications {
         $title = get_the_title($post->ID);
         $excerpt = wp_trim_words(get_the_excerpt($post->ID), 20);
         
-        error_log('🔔 FCM: Sending notification - Title: ' . $title);
+        error_log('🔔 FCM: ✅ SENDING notification for NEW PUBLISH - Title: ' . $title . ' (Old status: ' . $old_status . ' → New status: ' . $new_status . ')');
         
         $result = $this->send_fcm_notification(
             $tokens,
