@@ -66,11 +66,11 @@ class Kiosk_Content_Automation
         // Date field sync: when custom date fields are updated, sync back to JSON
         add_action('updated_post_meta', array($this, 'sync_date_field_to_json'), 10, 4);
 
-        // Admin bar manual cron trigger
-        add_action('admin_bar_menu', array($this, 'add_cron_trigger_to_admin_bar'), 999);
-        add_action('wp_ajax_kiosk_manual_trigger_cron', array($this, 'manual_trigger_cron'));
-        add_action('admin_footer', array($this, 'add_cron_trigger_script'));
-        add_action('wp_footer', array($this, 'add_cron_trigger_script'));
+        // Admin bar manual cron trigger - DISABLED
+        // add_action('admin_bar_menu', array($this, 'add_cron_trigger_to_admin_bar'), 999);
+        // add_action('wp_ajax_kiosk_manual_trigger_cron', array($this, 'manual_trigger_cron'));
+        // add_action('admin_footer', array($this, 'add_cron_trigger_script'));
+        // add_action('wp_footer', array($this, 'add_cron_trigger_script'));
     }
 
     /**

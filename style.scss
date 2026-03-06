@@ -2030,3 +2030,32 @@ form {
 		}
 	}
 }
+
+/* Firebase Push Notifications */
+.fcm-notification-box {
+	.fcm-btn {
+		transition: all 0.3s ease;
+		
+		&:hover {
+			transform: translateY(-2px);
+			box-shadow: 0 4px 12px rgba(0,0,0,0.25) !important;
+		}
+		
+		&:active {
+			transform: translateY(0);
+		}
+		
+		&:disabled {
+			opacity: 0.6;
+			cursor: not-allowed;
+		}
+	}
+	
+	#fcm-subscribe-btn:hover {
+		background: #f8f9ff !important;
+	}
+	
+	#fcm-unsubscribe-btn:hover {
+		background: rgba(255,255,255,0.3) !important;
+	}
+}

@@ -105,8 +105,21 @@
 
         </ul>
 
-
         <ul class="sidebar-menu">
+            <li class="sidebar-item" id="fcm-sidebar-item">
+                <a href="#" class="sidebar-link" id="fcm-sidebar-link">
+                    <!-- Empty Bell Icon (default) -->
+                    <svg class="sidebar-icon" id="fcm-bell-empty" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                        <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                    </svg>
+                    <!-- Filled Bell Icon (when enabled) -->
+                    <svg class="sidebar-icon" id="fcm-bell-filled" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" stroke="none" style="display: none;">
+                        <path d="M12 2C10.9 2 10 2.9 10 4V4.29C7.03 5.17 5 7.9 5 11V17L3 19V20H21V19L19 17V11C19 7.9 16.97 5.17 14 4.29V4C14 2.9 13.1 2 12 2ZM12 23C13.1 23 14 22.1 14 21H10C10 22.1 10.9 23 12 23Z" />
+                    </svg>
+                    <span id="fcm-sidebar-text">Enable Notification</span>
+                </a>
+            </li>
             <li class="sidebar-item <?php echo (is_page('search-pincode') || is_page_template('pincode-search.php')) ? 'active' : ''; ?>">
                 <a href="<?php echo esc_url(home_url('/search-pincode/')); ?>" class="sidebar-link">
                     <svg class="sidebar-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">

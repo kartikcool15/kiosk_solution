@@ -513,11 +513,10 @@ function kiosk_display_modified_date_column($column_name, $post_id)
         
         if ($time_diff < DAY_IN_SECONDS) {
             $display = sprintf(__('%s ago', 'kiosk'), human_time_diff($modified_time, current_time('timestamp')));
+            echo '<abbr title="' . esc_attr(get_post_modified_time('c', false, $post_id)) . '">' . esc_html($display) . '</abbr>';
         } else {
-            $display = $modified_date . '<br>' . $modified_time_display;
+            echo '<abbr title="' . esc_attr(get_post_modified_time('c', false, $post_id)) . '">' . esc_html($modified_date) . '<br>' . esc_html($modified_time_display) . '</abbr>';
         }
-        
-        echo '<abbr title="' . esc_attr(get_post_modified_time('c', false, $post_id)) . '">' . esc_html($display) . '</abbr>';
     }
 }
 

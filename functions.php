@@ -462,6 +462,7 @@ require_once get_template_directory() . '/module/search-pincode/pincode-search.p
 require_once get_template_directory() . '/module/search-ifsc/ifsc-search.php';
 require_once get_template_directory() . '/module/image-tools/image-tools.php';
 require_once get_template_directory() . '/module/image-tools/image-converter.php';
+require_once get_template_directory() . '/module/firebase-notifications/firebase-notifications.php';
 
 /**
  * AJAX handler for dynamic post search
@@ -540,3 +541,6 @@ function kiosk_localize_search_script()
     ));
 }
 add_action('wp_enqueue_scripts', 'kiosk_localize_search_script');
+
+// update_option('push_vapid_public_key', 'BEQ-i91e5-EoKV3UWGlbFzUOsVYLQncel6AEKFt6J6jqIyLmsArZ8oK_diLIz7AE_XtksQCQs1Hj5xtr0-tBJZY');
+// update_option('push_vapid_private_key', 'e3qEb4Qtmy5WaRy77-6NTizWtUNzHJlJlKvS98Z2N30');
