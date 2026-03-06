@@ -55,13 +55,19 @@
             </thead>
             <tbody>
                 <?php foreach ($recent_notifications as $notification): 
-                    $notification_ctr = $notification->successful_sends > 0 
-                        ? round(($notification->clicks / $notification->successful_sends) * 100, 1)
+                    // Ensure all values are integers (never NULL)
+                    $successful_sends = intval($notification->successful_sends ?: 0);
+                    $clicks = intval($notification->clicks ?: 0);
+                    $total_recipients = intval($notification->total_recipients ?: 0);
+                    $failed_sends = intval($notification->failed_sends ?: 0);
+                    
+                    $notification_ctr = $successful_sends > 0 
+                        ? round(($clicks / $successful_sends) * 100, 1)
                         : 0;
                     $post_title = $notification->post_id > 0 ? get_the_title($notification->post_id) : 'N/A';
                 ?>
                 <tr>
-                    <td><strong>#<?php echo $notification->id; ?></strong></td>
+                    <td><strong>#<?php echo intval($notification->id); ?></strong></td>
                     <td>
                         <strong><?php echo esc_html($notification->notification_title); ?></strong>
                         <?php if ($notification->notification_body): ?>
@@ -77,20 +83,20 @@
                             <span style="color: #999;">Test</span>
                         <?php endif; ?>
                     </td>
-                    <td><?php echo number_format($notification->total_recipients); ?></td>
+                    <td><?php echo number_format($total_recipients); ?></td>
                     <td>
                         <span style="color: #00a32a; font-weight: bold;">
-                            <?php echo number_format($notification->successful_sends); ?>
+                            <?php echo number_format($successful_sends); ?>
                         </span>
                     </td>
                     <td>
                         <span style="color: #dc2626; font-weight: bold;">
-                            <?php echo number_format($notification->failed_sends); ?>
+                            <?php echo number_format($failed_sends); ?>
                         </span>
                     </td>
                     <td>
                         <span style="color: #f59e0b; font-weight: bold;">
-                            <?php echo number_format($notification->clicks); ?>
+                            <?php echo number_format($clicks); ?>
                         </span>
                     </td>
                     <td>

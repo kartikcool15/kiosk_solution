@@ -194,7 +194,7 @@ class Firebase_Notifications {
         }
         
         global $wpdb;
-        $total_tokens = $wpdb->get_var("SELECT COUNT(*) FROM {$this->table_name}");
+        $total_tokens = intval($wpdb->get_var("SELECT COUNT(*) FROM {$this->table_name}"));
         
         include get_template_directory() . '/module/firebase-notifications/admin-page.php';
     }
@@ -582,12 +582,12 @@ class Firebase_Notifications {
         
         global $wpdb;
         
-        // Get statistics
-        $total_subscribers = $wpdb->get_var("SELECT COUNT(*) FROM {$this->table_name}");
-        $total_notifications = $wpdb->get_var("SELECT COUNT(*) FROM {$this->logs_table_name}");
-        $total_delivered = $wpdb->get_var("SELECT SUM(successful_sends) FROM {$this->logs_table_name}");
-        $total_clicks = $wpdb->get_var("SELECT SUM(clicks) FROM {$this->logs_table_name}");
-        $total_failed = $wpdb->get_var("SELECT SUM(failed_sends) FROM {$this->logs_table_name}");
+        // Get statistics (ensure we always have numeric values, never NULL)
+        $total_subscribers = intval($wpdb->get_var("SELECT COUNT(*) FROM {$this->table_name}"));
+        $total_notifications = intval($wpdb->get_var("SELECT COUNT(*) FROM {$this->logs_table_name}"));
+        $total_delivered = intval($wpdb->get_var("SELECT SUM(successful_sends) FROM {$this->logs_table_name}") ?: 0);
+        $total_clicks = intval($wpdb->get_var("SELECT SUM(clicks) FROM {$this->logs_table_name}") ?: 0);
+        $total_failed = intval($wpdb->get_var("SELECT SUM(failed_sends) FROM {$this->logs_table_name}") ?: 0);
         
         // Get recent notifications (last 50)
         $recent_notifications = $wpdb->get_results(
