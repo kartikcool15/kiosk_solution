@@ -1,17 +1,12 @@
 <aside id="custom-sidebar" class="custom-sidebar">
     <div class="sidebar-header">
-        <img src="<?php echo esc_url(home_url('/wp-content/uploads/2026/03/Bold-Logo-with-Checkmark-and-Building-Silhouette-1.png')); ?>" alt="<?php bloginfo('name'); ?>">
-        <!-- <h2 class="sidebar-brand">Govt Jobs Exams</h2> -->
+        <img src="<?php echo esc_url(home_url('wp-content/uploads/2026/03/Untitled-design.png')); ?>" alt="<?php bloginfo('name'); ?>">
         <button class="sidebar-toggle">
             <span></span>
             <span></span>
             <span></span>
         </button>
     </div>
-
-
-    <!-- Organization Taxonomy Dropdown -->
-
 
     <nav class="sidebar-nav">
         <ul class="sidebar-menu">

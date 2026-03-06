@@ -158,14 +158,15 @@ class Kiosk_Post_Processor
 
         wp_update_post($update_data);
 
+        // DISABLED: Don't re-download featured image on updates (only on new posts)
         // Update featured image if available
-        if (isset($post_data['_embedded']['wp:featuredmedia'][0]['source_url'])) {
-            $image_url = $post_data['_embedded']['wp:featuredmedia'][0]['source_url'];
-            $featured_image_id = $this->download_and_attach_image($image_url, $title_to_use);
-            if ($featured_image_id > 0) {
-                set_post_thumbnail($post_id, $featured_image_id);
-            }
-        }
+        // if (isset($post_data['_embedded']['wp:featuredmedia'][0]['source_url'])) {
+        //     $image_url = $post_data['_embedded']['wp:featuredmedia'][0]['source_url'];
+        //     $featured_image_id = $this->download_and_attach_image($image_url, $title_to_use);
+        //     if ($featured_image_id > 0) {
+        //         set_post_thumbnail($post_id, $featured_image_id);
+        //     }
+        // }
 
         // Update meta: raw data for ChatGPT processing
         update_post_meta($post_id, 'kiosk_raw_post_data', $prepared_json);
