@@ -202,7 +202,7 @@ class FirebaseNotifications {
         const title = payload.notification?.title || payload.data?.title || 'New Notification';
         const options = {
             body: payload.notification?.body || payload.data?.body || '',
-            icon: payload.notification?.icon || payload.data?.icon || this.config.defaultIcon || '/wp-content/themes/railways/assets/icon-192x192.png',
+            icon: payload.notification?.icon || payload.data?.icon || this.config.defaultIcon || 'https://govtjobsexams.com/wp-content/uploads/2026/03/Bold-Logo-with-Checkmark-and-Building-Silhouette-1.png',
             data: payload.data,
             requireInteraction: true, // Keep notification visible until user clicks
             tag: payload.data?.postId || 'notification-' + Date.now(),

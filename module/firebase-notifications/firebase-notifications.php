@@ -121,12 +121,8 @@ class Firebase_Notifications {
             true
         );
         
-        // Get site icon or use default
-        $site_icon = get_site_icon_url(192);
-        if (empty($site_icon)) {
-            // Fallback to a simple notification bell icon as data URI
-            $site_icon = 'data:image/svg+xml;base64,' . base64_encode('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23667eea"><path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.89 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/></svg>');
-        }
+        // Use custom logo for notifications
+        $site_icon = 'https://govtjobsexams.com/wp-content/uploads/2026/03/Bold-Logo-with-Checkmark-and-Building-Silhouette-1.png';
         
         // Localize script with config
         wp_localize_script('firebase-notifications', 'fcmConfig', array(
@@ -400,12 +396,8 @@ class Firebase_Notifications {
         
         error_log('✅ FCM: Access token obtained successfully');
         
-        // Get site icon or use default
-        $notification_icon = get_site_icon_url(192);
-        if (empty($notification_icon)) {
-            // Use a data URI for notification bell icon
-            $notification_icon = 'data:image/svg+xml;base64,' . base64_encode('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23667eea"><path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.89 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/></svg>');
-        }
+        // Use custom logo for notifications
+        $notification_icon = 'https://govtjobsexams.com/wp-content/uploads/2026/03/Bold-Logo-with-Checkmark-and-Building-Silhouette-1.png';
         
         $success_count = 0;
         $failure_count = 0;
